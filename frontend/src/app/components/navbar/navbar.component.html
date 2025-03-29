@@ -1,9 +1,9 @@
 <header class="navbar">
   <div class="navbar__container">
-    <a href="/" class="navbar__logo">
+    <a href="#" class="navbar__logo">
       <img
-        src="assets/mtg-logo.svg"
-        alt="Magic the Gathering Deck Builder Logo"
+        src="assets/name.svg"
+        alt="Joakim Helgodt Logo"
         class="navbar__logo-img"
       />
     </a>
@@ -25,20 +25,31 @@
           stroke-linecap="round"
           stroke-linejoin="round"
           stroke-width="2"
-          d="M4 6h16M4 12h16M4 18h16"
+          d="M4 6h16M4 12h16m-7 6h7"
         />
       </svg>
     </button>
 
-    <nav class="navbar__menu" [class.active]="menuActive">
-      <ul class="navbar__list">
-        <li class="navbar__item">
-          <a href="/deck-builder" class="navbar__link">Deck Builder</a>
-        </li>
-        <li class="navbar__item">
-          <a href="/wish-list" class="navbar__link">Wish List</a>
-        </li>
-      </ul>
+    <nav
+      id="menu"
+      class="navbar__menu"
+      [class.active]="menuOpen"
+      (click)="closeMenu()"
+    >
+      <a href="#" class="navbar__link">Home</a>
+      <a href="#projects" class="navbar__link">Projects</a>
+      <a href="#professionaljourney" class="navbar__link"
+        >Professional Journey</a
+      >
+
+      <a href="#connect" class="navbar__link">Connect</a>
+      <a
+        href="assets/resume.pdf"
+        download
+        class="navbar__link navbar__link--resume"
+      >
+        Resume
+      </a>
     </nav>
   </div>
 </header>
