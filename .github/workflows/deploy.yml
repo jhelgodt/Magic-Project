@@ -26,7 +26,7 @@ jobs:
         run: npm install
 
       - name: Build Angular project
-        run: npx ng build --configuration production --output-path=dist/MagicProject
+        run: npx ng build --configuration production --output-path=dist/Magic-Project
 
       - name: Debug root dir
         run: ls -la
@@ -34,14 +34,14 @@ jobs:
       - name: Debug dist dir
         run: ls -la dist
 
-      - name: Debug dist/MagicProject
-        run: ls -la dist/MagicProject
+      - name: Debug dist/Magic-Project
+        run: ls -la dist/Magic-Project
 
-      - name: Debug dist/MagicProject/browser
-        run: ls -la dist/MagicProject/browser
+      - name: Debug dist/Magic-Project/browser
+        run: ls -la dist/Magic-Project/browser
 
       - name: Deploy to GitHub Pages
         uses: peaceiris/actions-gh-pages@v3
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: frontend/dist/MagicProject/browser
+          publish_dir: frontend/dist/Magic-Project/browser
