@@ -1,4 +1,4 @@
-name: Deploy Angular to GitHub Pages
+name: Deploy Magic the Gathering Deck Builder to GitHub Pages
 
 on:
   push:
@@ -11,7 +11,7 @@ jobs:
 
     defaults:
       run:
-        working-directory: frontend # 👈 Ser till att jobba i rätt mapp
+        working-directory: frontend # Ensure the workflow operates in the correct directory
 
     steps:
       - name: Checkout repository
@@ -26,7 +26,7 @@ jobs:
         run: npm install
 
       - name: Build Angular project
-        run: npx ng build --configuration production --output-path=dist/portfolio2
+        run: npx ng build --configuration production --output-path=dist/MagicProject
 
       - name: Debug root dir
         run: ls -la
@@ -34,14 +34,14 @@ jobs:
       - name: Debug dist dir
         run: ls -la dist
 
-      - name: Debug dist/portfolio2
-        run: ls -la dist/portfolio2
+      - name: Debug dist/MagicProject
+        run: ls -la dist/MagicProject
 
-      - name: Debug dist/portfolio2/browser
-        run: ls -la dist/portfolio2/browser
+      - name: Debug dist/MagicProject/browser
+        run: ls -la dist/MagicProject/browser
 
       - name: Deploy to GitHub Pages
         uses: peaceiris/actions-gh-pages@v3
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: frontend/dist/portfolio2/browser
+          publish_dir: frontend/dist/MagicProject/browser

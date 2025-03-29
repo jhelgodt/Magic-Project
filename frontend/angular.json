@@ -3,7 +3,7 @@
   "version": 1,
   "newProjectRoot": "projects",
   "projects": {
-    "Magic-Project": {
+    "MagicProject": {
       "projectType": "application",
       "schematics": {
         "@schematics/angular:component": {
@@ -17,7 +17,7 @@
         "build": {
           "builder": "@angular-devkit/build-angular:application",
           "options": {
-            "outputPath": "dist/portfolio2",
+            "outputPath": "dist/MagicProject",
             "index": "src/index.html",
             "browser": "src/main.ts",
             "polyfills": ["zone.js"],
@@ -32,7 +32,7 @@
             ],
             "styles": ["src/styles.scss"],
             "scripts": [],
-            "baseHref": "/Magic-Project/"
+            "baseHref": "/MagicProject/"
           },
           "configurations": {
             "production": {
@@ -66,10 +66,10 @@
           "builder": "@angular-devkit/build-angular:dev-server",
           "configurations": {
             "production": {
-              "buildTarget": "portfolio2:build:production"
+              "buildTarget": "MagicProject:build:production"
             },
             "development": {
-              "buildTarget": "portfolio2:build:development"
+              "buildTarget": "MagicProject:build:development"
             }
           },
           "defaultConfiguration": "development"
