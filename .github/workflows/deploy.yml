@@ -11,7 +11,7 @@ jobs:
 
     defaults:
       run:
-        working-directory: frontend # 👈 Lägg till denna rad11
+        working-directory: frontend # 👈 Ser till att jobba i rätt mapp
 
     steps:
       - name: Checkout repository
@@ -44,4 +44,4 @@ jobs:
         uses: peaceiris/actions-gh-pages@v3
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: dist/portfolio2/browser
+          publish_dir: frontend/dist/portfolio2/browser
