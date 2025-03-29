@@ -1,0 +1,44 @@
+name: Deploy Angular to GitHub Pages
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: 18
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Build Angular project
+        run: npx ng build --configuration production --output-path=dist/portfolio2
+
+      - name: Debug root dir
+        run: ls -la
+
+      - name: Debug dist dir
+        run: ls -la dist
+
+      - name: Debug dist/portfolio2
+        run: ls -la dist/portfolio2
+
+      - name: Debug dist/portfolio2/browser
+        run: ls -la dist/portfolio2/browser
+
+      - name: Deploy to GitHub Pages
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: dist/portfolio2/browser
+          cname: joakimhelgodt.com
