@@ -1,0 +1,70 @@
+@use "../../../styles/variables" as *;
+@use "../../../styles/mixins" as *;
+
+.navbar {
+  background-color: $color-bg-light;
+  padding: 1rem 0;
+  position: fixed;
+  width: 100%;
+  z-index: 1000;
+
+  &__container {
+    width: 100%;
+    padding-left: 2rem;
+    padding-right: 2rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  &__logo-img {
+    height: 30px;
+  }
+
+  &__menu {
+    display: flex;
+    align-items: center;
+    gap: 2.5rem;
+
+    @media (max-width: 768px) {
+      display: none;
+      flex-direction: column;
+      position: absolute;
+      top: 100%;
+      right: 0;
+      background-color: $color-bg-light;
+      width: 200px;
+      padding: 1rem;
+      box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+
+      &.active {
+        display: flex;
+      }
+    }
+  }
+
+  &__link {
+    @include nav-link;
+
+    &--resume {
+      @include nav-link-resume;
+    }
+  }
+
+  &__toggle {
+    display: none;
+    background: none;
+    border: none;
+    cursor: pointer;
+
+    @media (max-width: 768px) {
+      display: block;
+    }
+
+    & .navbar__icon {
+      width: 24px;
+      height: 24px;
+      color: $color-text-muted;
+    }
+  }
+}

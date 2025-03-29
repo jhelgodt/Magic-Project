@@ -1,0 +1,55 @@
+<header class="navbar">
+  <div class="navbar__container">
+    <a href="#" class="navbar__logo">
+      <img
+        src="assets/name.svg"
+        alt="Joakim Helgodt Logo"
+        class="navbar__logo-img"
+      />
+    </a>
+
+    <button
+      id="menu-toggle"
+      class="navbar__toggle"
+      aria-label="Toggle menu"
+      (click)="toggleMenu()"
+    >
+      <svg
+        class="navbar__icon"
+        xmlns="http://www.w3.org/2000/svg"
+        fill="none"
+        viewBox="0 0 24 24"
+        stroke="currentColor"
+      >
+        <path
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          stroke-width="2"
+          d="M4 6h16M4 12h16m-7 6h7"
+        />
+      </svg>
+    </button>
+
+    <nav
+      id="menu"
+      class="navbar__menu"
+      [class.active]="menuOpen"
+      (click)="closeMenu()"
+    >
+      <a href="#" class="navbar__link">Home</a>
+      <a href="#projects" class="navbar__link">Projects</a>
+      <a href="#professionaljourney" class="navbar__link"
+        >Professional Journey</a
+      >
+
+      <a href="#connect" class="navbar__link">Connect</a>
+      <a
+        href="assets/resume.pdf"
+        download
+        class="navbar__link navbar__link--resume"
+      >
+        Resume
+      </a>
+    </nav>
+  </div>
+</header>

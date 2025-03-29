@@ -1,0 +1,27 @@
+@use "variables" as *;
+@use "mixins" as *;
+@use "functions" as *;
+@use "reset";
+@use "typography";
+
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 0.5rem;
+}
+
+.hidden {
+  display: none;
+}
+
+.show {
+  display: block;
+}
+
+section {
+  @include section-padding;
+}
+
+.section-spacing {
+  margin-bottom: 4rem;
+}

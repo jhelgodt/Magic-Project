@@ -1,0 +1,79 @@
+@use "../../../styles/variables" as *;
+@use "../../../styles/mixins" as *;
+
+.professionaljourney {
+  @include section-padding;
+
+  .section-title {
+    @include section-title;
+  }
+
+  .subsection-title {
+    @include subsection-title;
+  }
+
+  .education__grid,
+  .experience__grid {
+    display: grid;
+    gap: 2rem;
+
+    @media (min-width: 768px) {
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    }
+  }
+
+  .education__card,
+  .experience__card {
+    display: flex;
+    align-items: flex-start;
+    gap: 1.5rem;
+    background-color: $color-bg-light;
+    padding: 1.5rem;
+    border-radius: 12px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+    transition: transform 0.3s ease;
+
+    &:hover {
+      transform: translateY(-4px);
+    }
+
+    text-decoration: none;
+    color: inherit;
+  }
+
+  .education__logo,
+  .experience__logo {
+    width: 60px;
+    height: 60px;
+    object-fit: contain;
+  }
+
+  .education__info,
+  .experience__content {
+    h3 {
+      font-size: 1.25rem;
+      font-weight: 700;
+      margin-bottom: 0.25rem;
+    }
+
+    p {
+      margin-bottom: 0.25rem;
+      @include text-paragraph;
+    }
+
+    .education__desc,
+    .experience__desc {
+      font-size: 0.95rem;
+      color: $color-text-muted;
+    }
+
+    .experience__role {
+      font-weight: 600;
+      font-size: 1rem;
+    }
+  }
+
+  .subsection {
+    @include subsection;
+  }
+}
