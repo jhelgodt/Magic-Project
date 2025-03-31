@@ -2,21 +2,25 @@ import express from "express";
 import cors from "cors";
 import mongoose from "mongoose";
 import bookRoutes from "./routes/bookRoutes";
+import cardRoutes from "./routes/cardRoutes";
+import deckRoutes from "./routes/deckRoutes";
 
 const app = express();
 
 app.use(cors());
 app.use(express.json());
 
-// Rutter
+// Routes
 app.use("/api/v1/books", bookRoutes);
+app.use("/api/v1/cards", cardRoutes); // Add card routes
+app.use("/api/v1/decks", deckRoutes); // Add deck routes
 
-// Test-rutt
+// Test route
 app.get("/", (req, res) => {
-  res.send("API är igång!");
+  res.send("API is running!");
 });
 
-// MongoDB-koppling
+// MongoDB connection
 mongoose
   .connect(process.env.MONGO_URI as string)
   .then(() => console.log("Connected to MongoDB"))
