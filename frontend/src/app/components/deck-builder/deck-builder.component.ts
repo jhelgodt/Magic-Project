@@ -1,23 +1,28 @@
-import { Component, Inject, OnInit } from "@angular/core";
-import { BookService } from "../../services/book.service";
-import { CommonModule } from "@angular/common";
+import { Component, OnInit } from "@angular/core";
+import { HttpClient } from "@angular/common/http";
+import { Router } from "@angular/router";
 
 @Component({
   selector: "app-deck-builder",
   standalone: true,
-  imports: [CommonModule],
+  imports: [],
   templateUrl: "./deck-builder.component.html",
-  styleUrls: ["./deck-builder.component.scss"], // Fixed typo: styleUrl -> styleUrls
+  styleUrls: ["./deck-builder.component.scss"],
 })
 export class DeckBuilderComponent implements OnInit {
-  books: any[] = []; // Array to store books fetched from the backend
+  decks: any[] = []; // Array to store decks fetched from the backend
 
-  constructor(private bookService: BookService) {} // Inject the service
+  constructor(private http: HttpClient, private router: Router) {}
 
   ngOnInit(): void {
-    // Fetch books when the component initializes
-    this.bookService.getBooks().subscribe((data: any) => {
-      this.books = data;
+    // Fetch decks when the component initializes
+    this.http.get<any[]>("/api/v1/decks").subscribe((data) => {
+      this.decks = data;
     });
+  }
+
+  // Navigate to the deck detail page
+  viewDeck(deckId: string): void {
+    this.router.navigate(["/decks", deckId]);
   }
 }

@@ -1,0 +1,15 @@
+<div class="deck-detail" *ngIf="deck">
+  <header class="deck-detail__header">
+    <h1>{{ deck.name }}</h1>
+    <p>{{ deck.description }}</p>
+  </header>
+
+  <section class="deck-detail__cards">
+    <h2>Cards in this Deck</h2>
+    <div class="card" *ngFor="let card of deck.cards">
+      <h3>{{ card.name }}</h3>
+      <p>{{ card.type }} | {{ card.manaCost }}</p>
+      <p>{{ card.text }}</p>
+    </div>
+  </section>
+</div>
