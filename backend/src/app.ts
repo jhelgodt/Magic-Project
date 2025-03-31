@@ -7,12 +7,17 @@ import deckRoutes from "./routes/deckRoutes";
 
 const app = express();
 
+const allowedOrigins = ["http://localhost:4200", "https://jhelgodt.github.io"];
+
 app.use(
   cors({
-    origin: [
-      "http://localhost:4200",
-      "https://jhelgodt.github.io/Magic-Project/",
-    ], // Add your frontend's origin(s)
+    origin: (origin, callback) => {
+      if (!origin || allowedOrigins.includes(origin)) {
+        callback(null, true);
+      } else {
+        callback(new Error("Not allowed by CORS"));
+      }
+    },
     methods: ["GET", "POST", "PUT", "DELETE"],
     credentials: true,
   })
