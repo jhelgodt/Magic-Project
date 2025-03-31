@@ -1,23 +1,23 @@
 <div class="deck-builder">
   <!-- Header Section -->
   <header class="deck-builder__header">
-    <h1>Your Decks</h1>
-    <button class="deck-builder__add-button">+ Add New Deck</button>
+    <h1>Your Books</h1>
+    <button class="deck-builder__add-button">+ Add New Book</button>
   </header>
 
-  <!-- Decks Grid -->
+  <!-- Books Grid -->
   <section class="deck-builder__grid">
-    <!-- Example Deck Card -->
-    <div class="deck-card">
+    <!-- Dynamically Render Book Cards -->
+    <div class="deck-card" *ngFor="let book of books">
       <div class="deck-card__image">
-        <img src="assets/deck-placeholder.jpg" alt="Deck Cover" />
+        <img src="assets/deck-placeholder.jpg" alt="Book Cover" />
       </div>
       <div class="deck-card__info">
-        <h2 class="deck-card__title">Deck Name</h2>
-        <p class="deck-card__details">60 cards | Standard</p>
+        <h2 class="deck-card__title">{{ book.title }}</h2>
+        <p class="deck-card__details">
+          {{ book.author }} | {{ book.publishedYear }}
+        </p>
       </div>
     </div>
-
-    <!-- Add more deck cards dynamically -->
   </section>
 </div>

@@ -1,13 +1,14 @@
-import { Component } from '@angular/core';
-import { RouterOutlet } from '@angular/router';
-import { NavbarComponent } from './components/navbar/navbar.component';
-import { HeroComponent } from './components/hero/hero.component';
-import { ProfessionalJourneyComponent } from './components/professional-journey/professional-journey.component';
-import { ProjectsComponent } from './components/projects/projects.component';
-import { ConnectComponent } from './components/connect/connect.component';
+import { Component } from "@angular/core";
+import { RouterOutlet } from "@angular/router";
+import { NavbarComponent } from "./components/navbar/navbar.component";
+import { HeroComponent } from "./components/hero/hero.component";
+import { ProfessionalJourneyComponent } from "./components/professional-journey/professional-journey.component";
+import { ProjectsComponent } from "./components/projects/projects.component";
+import { ConnectComponent } from "./components/connect/connect.component";
+import { DeckBuilderComponent } from "./components/deck-builder/deck-builder.component";
 
 @Component({
-  selector: 'app-root',
+  selector: "app-root",
   standalone: true,
   imports: [
     RouterOutlet,
@@ -16,10 +17,11 @@ import { ConnectComponent } from './components/connect/connect.component';
     ProfessionalJourneyComponent,
     ProjectsComponent,
     ConnectComponent,
+    DeckBuilderComponent,
   ],
-  templateUrl: './app.component.html',
-  styleUrls: ['./app.component.scss'],
+  templateUrl: "./app.component.html",
+  styleUrls: ["./app.component.scss"],
 })
 export class AppComponent {
-  title = 'portfolio2';
+  title = "portfolio2";
 }
