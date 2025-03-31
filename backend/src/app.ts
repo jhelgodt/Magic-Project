@@ -7,7 +7,16 @@ import deckRoutes from "./routes/deckRoutes";
 
 const app = express();
 
-app.use(cors());
+app.use(
+  cors({
+    origin: [
+      "http://localhost:4200",
+      "https://jhelgodt.github.io/Magic-Project/",
+    ], // Add your frontend's origin(s)
+    methods: ["GET", "POST", "PUT", "DELETE"],
+    credentials: true,
+  })
+);
 app.use(express.json());
 
 // Routes

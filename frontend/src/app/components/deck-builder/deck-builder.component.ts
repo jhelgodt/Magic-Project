@@ -1,6 +1,7 @@
 import { Component, OnInit } from "@angular/core";
 import { HttpClient } from "@angular/common/http";
 import { Router } from "@angular/router";
+import { API_URL } from "../../app.config";
 
 @Component({
   selector: "app-deck-builder",
@@ -15,8 +16,7 @@ export class DeckBuilderComponent implements OnInit {
   constructor(private http: HttpClient, private router: Router) {}
 
   ngOnInit(): void {
-    // Fetch decks when the component initializes
-    this.http.get<any[]>("/api/v1/decks").subscribe((data) => {
+    this.http.get<any[]>(`${API_URL}/decks`).subscribe((data) => {
       this.decks = data;
     });
   }

@@ -2,11 +2,43 @@
   <div class="navbar__container">
     <!-- Logo -->
     <a href="/" class="navbar__logo">
-      <img
-        src="assets/mtg-logo.svg"
-        alt="Magic the Gathering Deck Builder Logo"
-        class="navbar__logo-img"
-      />
+      <svg
+        width="200"
+        height="200"
+        viewBox="0 0 200 200"
+        xmlns="http://www.w3.org/2000/svg"
+      >
+        <style>
+          .text {
+            font-family: "Georgia", serif;
+            font-size: 18px;
+            fill: #fff;
+          }
+          .circle {
+            fill: none;
+            stroke: #6c5ce7;
+            stroke-width: 4;
+            stroke-dasharray: 4 6;
+          }
+          .wand {
+            stroke: #fff;
+            stroke-width: 2;
+          }
+          .sparkle {
+            fill: #ffeaa7;
+          }
+          .bg {
+            fill: #2d3436;
+          }
+        </style>
+        <rect width="200" height="200" class="bg" />
+        <circle cx="100" cy="100" r="70" class="circle" />
+        <line x1="60" y1="140" x2="140" y2="60" class="wand" />
+        <circle cx="140" cy="60" r="4" class="sparkle" />
+        <text x="100" y="185" text-anchor="middle" class="text">
+          DeckCrafter
+        </text>
+      </svg>
     </a>
 
     <button
