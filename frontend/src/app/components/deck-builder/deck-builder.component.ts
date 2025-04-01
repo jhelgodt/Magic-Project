@@ -3,11 +3,12 @@ import { HttpClient } from "@angular/common/http";
 import { Router } from "@angular/router";
 import { API_URL } from "../../app.config";
 import { ChangeDetectorRef } from "@angular/core";
+import { CommonModule } from "@angular/common"; // Import CommonModule
 
 @Component({
   selector: "app-deck-builder",
   standalone: true,
-  imports: [],
+  imports: [CommonModule],
   templateUrl: "./deck-builder.component.html",
   styleUrls: ["./deck-builder.component.scss"],
 })
