@@ -24,12 +24,15 @@ export class DeckBuilderComponent implements OnInit {
     this.http.get<any[]>(`${API_URL}/decks`).subscribe((data) => {
       console.log("Decks fetched from backend:", data); // Log the fetched decks
       this.decks = data;
-      this.cdr.detectChanges(); // Trigger change detection
+      setTimeout(() => {
+        this.cdr.detectChanges(); // Trigger change detection after a delay
+      }, 0);
     });
   }
 
   // Navigate to the deck detail page
   viewDeck(deckId: string): void {
+    console.log("Navigating to deck:", deckId); // Add a log to confirm navigation
     this.router.navigate(["/decks", deckId]);
   }
 }

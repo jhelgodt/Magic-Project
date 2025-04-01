@@ -17,8 +17,10 @@ export class DeckDetailComponent implements OnInit {
 
   ngOnInit(): void {
     const deckId = this.route.snapshot.paramMap.get("id");
+    console.log("Deck ID from route:", deckId); // Log the deck ID
     if (deckId) {
       this.http.get(`${API_URL}/decks/${deckId}`).subscribe((data) => {
+        console.log("Deck fetched from backend:", data); // Log the fetched deck
         this.deck = data;
       });
     }

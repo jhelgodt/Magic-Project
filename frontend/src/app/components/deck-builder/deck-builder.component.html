@@ -5,12 +5,16 @@
   </header>
 
   <section class="deck-builder__grid">
+    <pre>{{ decks | json }}</pre>
+    <!-- Display raw JSON data -->
     <div *ngIf="decks.length === 0">No decks available.</div>
     <div class="deck-card" *ngFor="let deck of decks">
       <div class="deck-card__info">
         <h2 class="deck-card__title">{{ deck.name }}</h2>
         <p class="deck-card__details">{{ deck.description }}</p>
         <button (click)="viewDeck(deck._id)">View Deck</button>
+        <pre>{{ deck | json }}</pre>
+        <!-- Display raw JSON data for each deck -->
       </div>
     </div>
   </section>
