@@ -6,6 +6,7 @@ import { ProfessionalJourneyComponent } from "./components/professional-journey/
 import { ProjectsComponent } from "./components/projects/projects.component";
 import { ConnectComponent } from "./components/connect/connect.component";
 import { DeckBuilderComponent } from "./components/deck-builder/deck-builder.component";
+import { CommonModule } from "@angular/common"; // Import CommonModule
 
 @Component({
   selector: "app-root",
@@ -18,6 +19,7 @@ import { DeckBuilderComponent } from "./components/deck-builder/deck-builder.com
     ProjectsComponent,
     ConnectComponent,
     DeckBuilderComponent,
+    CommonModule,
   ],
   templateUrl: "./app.component.html",
   styleUrls: ["./app.component.scss"],
