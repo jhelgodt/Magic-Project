@@ -2,11 +2,12 @@ import { Component, OnInit } from "@angular/core";
 import { ActivatedRoute } from "@angular/router";
 import { HttpClient } from "@angular/common/http";
 import { API_URL } from "../../app.config";
+import { CommonModule } from "@angular/common"; // Import CommonModule
 
 @Component({
   selector: "app-deck-detail",
   standalone: true,
-  imports: [],
+  imports: [CommonModule],
   templateUrl: "./deck-detail.component.html",
   styleUrls: ["./deck-detail.component.scss"],
 })
@@ -19,9 +20,14 @@ export class DeckDetailComponent implements OnInit {
     const deckId = this.route.snapshot.paramMap.get("id");
     console.log("Deck ID from route:", deckId); // Log the deck ID
     if (deckId) {
-      this.http.get(`${API_URL}/decks/${deckId}`).subscribe((data) => {
-        console.log("Deck fetched from backend:", data); // Log the fetched deck
-        this.deck = data;
+      this.http.get(`${API_URL}/decks/${deckId}`).subscribe({
+        next: (data) => {
+          console.log("Deck fetched from backend:", data);
+          this.deck = data;
+        },
+        error: (err) => {
+          console.error("Error fetching deck:", err);
+        },
       });
     }
   }
