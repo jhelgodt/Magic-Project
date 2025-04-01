@@ -7,7 +7,7 @@ import { ProjectsComponent } from "./components/projects/projects.component";
 import { ConnectComponent } from "./components/connect/connect.component";
 import { DeckBuilderComponent } from "./components/deck-builder/deck-builder.component";
 import { CommonModule } from "@angular/common"; // Import CommonModule
-
+import { DebugComponent } from "./components/debug/debug.component";
 @Component({
   selector: "app-root",
   standalone: true,
@@ -20,6 +20,7 @@ import { CommonModule } from "@angular/common"; // Import CommonModule
     ConnectComponent,
     DeckBuilderComponent,
     CommonModule,
+    DebugComponent,
   ],
   templateUrl: "./app.component.html",
   styleUrls: ["./app.component.scss"],

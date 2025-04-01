@@ -1,26 +1,38 @@
-import { ApplicationConfig, provideZoneChangeDetection } from "@angular/core";
-import { routes } from "./app.routes";
-import { Inject, Injectable } from "@angular/core";
+// src/app/app.config.ts
+
+import {
+  ApplicationConfig,
+  provideZoneChangeDetection,
+  InjectionToken,
+  Inject,
+  Injectable,
+} from "@angular/core";
 import { provideHttpClient } from "@angular/common/http";
 import { provideRouter, withHashLocation } from "@angular/router";
+import { routes } from "./app.routes";
 
-export const API_URL = "https://magic-project-ph0g.onrender.com/api/v1";
+// ✅ Skapa en InjectionToken för API_URL
+export const API_URL = new InjectionToken<string>("API_URL");
 
+// ✅ Angular application configuration
 export const appConfig: ApplicationConfig = {
   providers: [
     provideZoneChangeDetection({ eventCoalescing: true }),
     provideHttpClient(),
-    provideRouter(routes, withHashLocation()), // Add routing with hash location
-    { provide: "API_URL", useValue: API_URL }, // Add API_URL as a provider
+    //provideRouter(routes, withHashLocation()),
+    {
+      provide: API_URL,
+      useValue: "https://magic-project-ph0g.onrender.com/api/v1",
+    },
   ],
 };
+
+// ✅ (Valfri) enkel ApiService för att logga URL vid start
 @Injectable({
   providedIn: "root",
 })
 export class ApiService {
-  constructor(@Inject("API_URL") private apiUrl: string) {
+  constructor(@Inject(API_URL) private apiUrl: string) {
     console.log("Injected API_URL:", this.apiUrl);
   }
 }
-
-console.log("All Providers:", appConfig.providers);
