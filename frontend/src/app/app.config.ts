@@ -23,13 +23,4 @@ export class ApiService {
   }
 }
 
-console.log(
-  "Routes:",
-  appConfig.providers.find(
-    (provider): provider is { provide: string; useValue: unknown } =>
-      typeof (provider as { provide?: string; useValue?: unknown }).provide ===
-        "string" &&
-      (provider as { provide?: string; useValue?: unknown }).provide ===
-        "routes"
-  )
-);
+console.log("All Providers:", appConfig.providers);
