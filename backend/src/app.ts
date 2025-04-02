@@ -1,7 +1,6 @@
 import express from "express";
 import cors from "cors";
 import mongoose from "mongoose";
-import bookRoutes from "./routes/bookRoutes";
 import cardRoutes from "./routes/cardRoutes";
 import deckRoutes from "./routes/deckRoutes";
 
@@ -25,7 +24,6 @@ app.use(
 app.use(express.json());
 
 // Routes
-app.use("/api/v1/books", bookRoutes);
 app.use("/api/v1/cards", cardRoutes); // Add card routes
 app.use("/api/v1/decks", deckRoutes); // Add deck routes
 
