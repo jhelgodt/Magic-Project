@@ -1,6 +1,23 @@
 import { Request, Response } from "express";
 import Deck from "../models/deckModel";
 
+export const addCardToDeck = async (req: Request, res: Response) => {
+  try {
+    const { cardId } = req.body;
+    const deck = await Deck.findByIdAndUpdate(
+      req.params.id,
+      { $push: { cards: cardId } },
+      { new: true }
+    ).populate("cards");
+    if (!deck) {
+      res.status(404).json({ error: "Deck not found" });
+      return;
+    }
+    res.json(deck);
+  } catch (err) {
+    res.status(400).json({ error: "Failed to add card to deck" });
+  }
+};
 // GET all decks
 export const getAllDecks = async (req: Request, res: Response) => {
   try {

@@ -2,8 +2,19 @@
   <header class="deck-builder__header">
     <h1>Your Decks</h1>
     <button class="deck-builder__add-button">+ Add New Deck</button>
+    <button (click)="navigateToCardBuilder()">+ Add New Card</button>
   </header>
-
+  <div class="deck-builder__add-form">
+    <form [formGroup]="newDeckForm" (ngSubmit)="createDeck()">
+      <input formControlName="name" placeholder="Deck Name" required />
+      <textarea
+        formControlName="description"
+        placeholder="Deck Description"
+        required
+      ></textarea>
+      <button type="submit">Create Deck</button>
+    </form>
+  </div>
   <section class="deck-builder__grid">
     <div *ngIf="decks.length === 0">No decks available.</div>
     <div class="deck-card" *ngFor="let deck of decks">

@@ -1,0 +1,28 @@
+<div class="card-builder">
+  <form (ngSubmit)="createCard()">
+    <input
+      [(ngModel)]="newCard.name"
+      name="name"
+      placeholder="Card Name"
+      required
+    />
+    <input
+      [(ngModel)]="newCard.type"
+      name="type"
+      placeholder="Card Type"
+      required
+    />
+    <input
+      [(ngModel)]="newCard.manaCost"
+      name="manaCost"
+      placeholder="Mana Cost"
+      required
+    />
+    <textarea
+      [(ngModel)]="newCard.text"
+      name="text"
+      placeholder="Card Text"
+    ></textarea>
+    <button type="submit">Create Card</button>
+  </form>
+</div>

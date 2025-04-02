@@ -31,4 +31,23 @@ export class DeckDetailComponent implements OnInit {
       });
     }
   }
+
+  newCardId: string = "";
+
+  addCard(): void {
+    this.http
+      .put(`${API_URL}/decks/${this.deck._id}/add-card`, {
+        cardId: this.newCardId,
+      })
+      .subscribe({
+        next: (updatedDeck) => {
+          console.log("Card added to deck:", updatedDeck);
+          this.deck = updatedDeck; // Update the deck with the new card
+          this.newCardId = ""; // Reset the input field
+        },
+        error: (err) => {
+          console.error("Error adding card to deck:", err);
+        },
+      });
+  }
 }
