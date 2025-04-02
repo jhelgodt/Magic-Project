@@ -9,6 +9,13 @@ import { API_URL } from "../app.config";
 export class CardService {
   constructor(private http: HttpClient) {}
 
+  // Fetch a card by name from Scryfall
+  getCardByName(cardName: string): Observable<any> {
+    const url = `https://api.scryfall.com/cards/named?fuzzy=${encodeURIComponent(
+      cardName
+    )}`;
+    return this.http.get<any>(url);
+  }
   // Fetch all cards
   getAllCards(): Observable<any[]> {
     return this.http.get<any[]>(`${API_URL}/cards`);

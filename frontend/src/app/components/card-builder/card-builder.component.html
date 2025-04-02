@@ -1,5 +1,26 @@
 <section id="card-builder" class="card-builder">
   <div class="card-builder">
+    <h1>Search for a Card</h1>
+    <form (ngSubmit)="fetchCard()">
+      <input
+        [(ngModel)]="cardName"
+        name="cardName"
+        placeholder="Enter Card Name"
+        required
+      />
+      <button type="submit">Search</button>
+    </form>
+
+    <div *ngIf="fetchedCard" class="card-result">
+      <h2>{{ fetchedCard.name }}</h2>
+      <p><strong>Type:</strong> {{ fetchedCard.type_line }}</p>
+      <p><strong>Mana Cost:</strong> {{ fetchedCard.mana_cost }}</p>
+      <p><strong>Oracle Text:</strong> {{ fetchedCard.oracle_text }}</p>
+      <img
+        [src]="fetchedCard.image_uris?.normal"
+        alt="{{ fetchedCard.name }}"
+      />
+    </div>
     <form (ngSubmit)="createCard()">
       <input
         [(ngModel)]="newCard.name"
