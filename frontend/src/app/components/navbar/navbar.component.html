@@ -1,44 +1,11 @@
 <header class="navbar">
   <div class="navbar__container">
-    <!-- Logo -->
-    <a href="/" class="navbar__logo">
-      <svg
-        width="200"
-        height="200"
-        viewBox="0 0 200 200"
-        xmlns="http://www.w3.org/2000/svg"
-      >
-        <style>
-          .text {
-            font-family: "Georgia", serif;
-            font-size: 18px;
-            fill: #fff;
-          }
-          .circle {
-            fill: none;
-            stroke: #6c5ce7;
-            stroke-width: 4;
-            stroke-dasharray: 4 6;
-          }
-          .wand {
-            stroke: #fff;
-            stroke-width: 2;
-          }
-          .sparkle {
-            fill: #ffeaa7;
-          }
-          .bg {
-            fill: #2d3436;
-          }
-        </style>
-        <rect width="200" height="200" class="bg" />
-        <circle cx="100" cy="100" r="70" class="circle" />
-        <line x1="60" y1="140" x2="140" y2="60" class="wand" />
-        <circle cx="140" cy="60" r="4" class="sparkle" />
-        <text x="100" y="185" text-anchor="middle" class="text">
-          DeckCrafter
-        </text>
-      </svg>
+    <a href="#" class="navbar__logo">
+      <img
+        src="assets/magic_logo.svg"
+        alt="Joakim Helgodt Logo"
+        class="navbar__logo-img"
+      />
     </a>
 
     <button
@@ -70,12 +37,12 @@
       (click)="closeMenu()"
     >
       <a href="#" class="navbar__link">Home</a>
-      <a href="/deck-builder" class="navbar__link">Deck Builder</a>
-      <a href="/wish-list" class="navbar__link">Wish List</a>
+      <a href="#projects" class="navbar__link">Projects</a>
+      <a href="#professionaljourney" class="navbar__link"
+        >Professional Journey</a
+      >
 
-      <a href="/Explore" class="navbar__link">Explore</a>
-      <a href="/login" class="navbar__link">Login</a>
-      <a href="/signup" class="navbar__link">Sign Up</a>
+      <a href="#connect" class="navbar__link">Connect</a>
     </nav>
   </div>
 </header>

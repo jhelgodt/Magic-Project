@@ -1,8 +1,6 @@
 <div class="deck-builder">
   <header class="deck-builder__header">
     <h1>Your Decks</h1>
-    <button class="deck-builder__add-button">+ Add New Deck</button>
-    <button (click)="navigateToCardBuilder()">+ Add New Card</button>
   </header>
   <div class="deck-builder__add-form">
     <form [formGroup]="newDeckForm" (ngSubmit)="createDeck()">
