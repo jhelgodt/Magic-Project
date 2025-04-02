@@ -5,8 +5,11 @@
   background-color: $color-bg-light;
   padding: 1rem 0;
   position: fixed;
+  top: 0;
+  left: 0;
   width: 100%;
   z-index: 1000;
+  border-bottom: 1px solid #444; // Add a border to prevent margin collapse
 
   &__container {
     width: 100%;
