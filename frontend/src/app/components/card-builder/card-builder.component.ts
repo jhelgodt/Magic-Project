@@ -1,19 +1,18 @@
 import { Component } from "@angular/core";
-import { HttpClient } from "@angular/common/http";
-import { API_URL } from "../../app.config";
+import { CardService } from "../../services/card.service";
 import { CommonModule } from "@angular/common"; // Import CommonModule
 import { FormsModule } from "@angular/forms"; // Import FormsModule
 
 @Component({
   selector: "app-card-builder",
-  imports: [CommonModule, FormsModule], // Add FormsModule to the imports array
+  imports: [CommonModule, FormsModule],
   templateUrl: "./card-builder.component.html",
-  styleUrls: ["./card-builder.component.scss"], // Corrected to styleUrls
+  styleUrls: ["./card-builder.component.scss"],
 })
 export class CardBuilderComponent {
   newCard = { name: "", type: "", manaCost: "", text: "" };
 
-  constructor(private http: HttpClient) {}
+  constructor(private cardService: CardService) {}
 
   createCard(): void {
     if (
@@ -26,20 +25,13 @@ export class CardBuilderComponent {
       return;
     }
 
-    console.log("Payload being sent:", this.newCard);
-
-    this.http.post(`${API_URL}/cards`, this.newCard).subscribe({
+    this.cardService.createCard(this.newCard).subscribe({
       next: (data) => {
         console.log("Card created:", data);
-        this.newCard = { name: "", type: "", manaCost: "", text: "" }; // Reset the form
+        this.newCard = { name: "", type: "", manaCost: "", text: "" }; // Reset form
       },
       error: (err) => {
-        console.error("Error creating card:", err);
-        if (err.error && err.error.error) {
-          alert(`Error: ${err.error.error}`); // Display server error message
-        } else {
-          alert("An unknown error occurred.");
-        }
+        console.error("Failed to create card:", err);
       },
     });
   }

@@ -1,55 +1,51 @@
 import { Component, OnInit } from "@angular/core";
 import { ActivatedRoute } from "@angular/router";
-import { HttpClient } from "@angular/common/http";
-import { API_URL } from "../../app.config";
+import { DeckService } from "../../services/deck.service";
 import { CommonModule } from "@angular/common"; // Import CommonModule
 import { FormsModule } from "@angular/forms"; // Import FormsModule
 
 @Component({
   selector: "app-deck-detail",
   standalone: true,
-  imports: [CommonModule, FormsModule], // Add FormsModule to the imports array
+  imports: [CommonModule, FormsModule],
   templateUrl: "./deck-detail.component.html",
   styleUrls: ["./deck-detail.component.scss"],
 })
 export class DeckDetailComponent implements OnInit {
-  deck: any = null; // Store the deck details
+  deck: any;
+  newCardId: string = "";
 
-  constructor(private route: ActivatedRoute, private http: HttpClient) {}
+  constructor(
+    private deckService: DeckService,
+    private route: ActivatedRoute
+  ) {}
 
   ngOnInit(): void {
     const deckId = this.route.snapshot.paramMap.get("id");
-    console.log("Deck ID from route:", deckId); // Log the deck ID
     if (deckId) {
-      this.http.get(`${API_URL}/decks/${deckId}`).subscribe({
+      this.deckService.getDeckById(deckId).subscribe({
         next: (data) => {
-          console.log("Deck fetched from backend:", data);
           this.deck = data;
-          console.log("Cards in deck:", this.deck.cards); // Log the cards array
         },
         error: (err) => {
-          console.error("Error fetching deck:", err);
+          console.error("Failed to fetch deck:", err);
         },
       });
     }
   }
 
-  newCardId: string = "";
-
   addCard(): void {
-    this.http
-      .put(`${API_URL}/decks/${this.deck._id}/add-card`, {
-        cardId: this.newCardId,
-      })
-      .subscribe({
-        next: (updatedDeck) => {
-          console.log("Card added to deck:", updatedDeck);
-          this.deck = updatedDeck; // Update the deck with the new card
-          this.newCardId = ""; // Reset the input field
+    const deckId = this.route.snapshot.paramMap.get("id");
+    if (deckId) {
+      this.deckService.addCardToDeck(deckId, this.newCardId).subscribe({
+        next: (data) => {
+          this.deck = data;
+          this.newCardId = ""; // Reset input
         },
         error: (err) => {
-          console.error("Error adding card to deck:", err);
+          console.error("Failed to add card to deck:", err);
         },
       });
+    }
   }
 }
