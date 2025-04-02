@@ -1,19 +1,21 @@
-<div class="deck-detail" *ngIf="deck">
-  <header class="deck-detail__header">
-    <h1>{{ deck.name }}</h1>
-    <p>{{ deck.description }}</p>
-  </header>
-  <div>
-    <h3>Add Card to Deck</h3>
-    <input type="text" [(ngModel)]="newCardId" placeholder="Enter Card ID" />
-    <button (click)="addCard()">Add Card</button>
-  </div>
-  <section class="deck-detail__cards">
-    <h2>Cards in this Deck</h2>
-    <div class="card" *ngFor="let card of deck.cards">
-      <h3>{{ card.name }}</h3>
-      <p>{{ card.type }} | {{ card.manaCost }}</p>
-      <p>{{ card.text }}</p>
+<section id="deck-detail" class="deck-detail">
+  <div class="deck-detail" *ngIf="deck">
+    <header class="deck-detail__header">
+      <h1>{{ deck.name }}</h1>
+      <p>{{ deck.description }}</p>
+    </header>
+    <div>
+      <h3>Add Card to Deck</h3>
+      <input type="text" [(ngModel)]="newCardId" placeholder="Enter Card ID" />
+      <button (click)="addCard()">Add Card</button>
     </div>
-  </section>
-</div>
+    <section class="deck-detail__cards">
+      <h2>Cards in this Deck</h2>
+      <div class="card" *ngFor="let card of deck.cards">
+        <h3>{{ card.name }}</h3>
+        <p>{{ card.type }} | {{ card.manaCost }}</p>
+        <p>{{ card.text }}</p>
+      </div>
+    </section>
+  </div>
+</section>

@@ -1,0 +1,77 @@
+@use "../../../styles/variables" as *;
+@use "../../../styles/mixins" as *;
+
+.deck-builder {
+  @include section-padding;
+
+  &__header {
+    text-align: center;
+    margin-bottom: 2rem;
+
+    &__title {
+      @include hero-title(center, $color-text-dark);
+    }
+  }
+
+  &__add-form {
+    margin-bottom: 3rem;
+    text-align: center;
+
+    form {
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+      align-items: center;
+    }
+
+    &__input,
+    &__textarea {
+      width: 100%;
+      max-width: 500px;
+      padding: 0.75rem;
+      border: 1px solid $color-border;
+      border-radius: 8px;
+      font-size: 1rem;
+    }
+
+    &__button {
+      @include nav-link-resume;
+    }
+  }
+
+  &__grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 2rem;
+
+    &__empty {
+      @include text-paragraph($color-text-muted);
+      text-align: center;
+    }
+  }
+
+  .deck-card {
+    padding: 1.5rem;
+    border: 1px solid $color-border;
+    border-radius: 8px;
+    background-color: $color-background-light;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+
+    &__info {
+      text-align: center;
+    }
+
+    &__title {
+      @include subsection-title(center, $color-text-dark);
+    }
+
+    &__details {
+      @include text-paragraph($color-text-muted);
+      margin-bottom: 1rem;
+    }
+
+    &__button {
+      @include nav-link-resume;
+    }
+  }
+}
