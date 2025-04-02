@@ -3,11 +3,12 @@ import { ActivatedRoute } from "@angular/router";
 import { HttpClient } from "@angular/common/http";
 import { API_URL } from "../../app.config";
 import { CommonModule } from "@angular/common"; // Import CommonModule
+import { FormsModule } from "@angular/forms"; // Import FormsModule
 
 @Component({
   selector: "app-deck-detail",
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, FormsModule], // Add FormsModule to the imports array
   templateUrl: "./deck-detail.component.html",
   styleUrls: ["./deck-detail.component.scss"],
 })
@@ -24,6 +25,7 @@ export class DeckDetailComponent implements OnInit {
         next: (data) => {
           console.log("Deck fetched from backend:", data);
           this.deck = data;
+          console.log("Cards in deck:", this.deck.cards); // Log the cards array
         },
         error: (err) => {
           console.error("Error fetching deck:", err);
