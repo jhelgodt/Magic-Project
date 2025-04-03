@@ -1,10 +1,6 @@
 import { Component } from "@angular/core";
 import { RouterOutlet } from "@angular/router";
 import { NavbarComponent } from "./components/navbar/navbar.component";
-import { HeroComponent } from "./components/hero/hero.component";
-import { ProfessionalJourneyComponent } from "./components/professional-journey/professional-journey.component";
-import { ProjectsComponent } from "./components/projects/projects.component";
-import { ConnectComponent } from "./components/connect/connect.component";
 import { DeckBuilderComponent } from "./components/deck-builder/deck-builder.component";
 import { CommonModule } from "@angular/common"; // Import CommonModule
 import { CardBuilderComponent } from "./components/card-builder/card-builder.component";
@@ -15,10 +11,6 @@ import { CardBuilderComponent } from "./components/card-builder/card-builder.com
   imports: [
     RouterOutlet,
     NavbarComponent,
-    HeroComponent,
-    ProfessionalJourneyComponent,
-    ProjectsComponent,
-    ConnectComponent,
     DeckBuilderComponent,
     CommonModule,
     CardBuilderComponent,

@@ -9,6 +9,10 @@ import { API_URL } from "../app.config";
 export class CardService {
   constructor(private http: HttpClient) {}
 
+  // Add a card from Scryfall to the database
+  addCardFromScryfall(cardName: string): Observable<any> {
+    return this.http.post<any>(`${API_URL}/cards/scryfall`, { cardName });
+  }
   // Fetch a card by name from Scryfall
   getCardByName(cardName: string): Observable<any> {
     const url = `https://api.scryfall.com/cards/named?fuzzy=${encodeURIComponent(

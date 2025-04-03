@@ -1,6 +1,47 @@
+import axios from "axios";
 import { Request, Response } from "express";
-import Card from "../models/cardModel";
+import Card, { ScryfallCard } from "../models/cardModel";
 
+export const addCardFromScryfall = async (
+  req: Request,
+  res: Response
+): Promise<void> => {
+  const { cardName } = req.body;
+
+  if (!cardName) {
+    res.status(400).json({ error: "Card name is required" });
+    return;
+  }
+
+  try {
+    const response = await axios.get(
+      `https://api.scryfall.com/cards/named?fuzzy=${encodeURIComponent(
+        cardName
+      )}`
+    );
+
+    const scryfallCard = response.data as ScryfallCard;
+
+    const existingCard = await Card.findOne({ name: scryfallCard.name });
+    if (existingCard) {
+      res.status(200).json(existingCard);
+      return;
+    }
+
+    const newCard = await Card.create({
+      name: scryfallCard.name,
+      type: scryfallCard.type_line,
+      manaCost: scryfallCard.mana_cost,
+      text: scryfallCard.oracle_text,
+      imageUrl: scryfallCard.image_uris?.normal,
+    });
+
+    res.status(201).json(newCard);
+  } catch (err) {
+    console.error("Failed to fetch or save card:", err);
+    res.status(500).json({ error: "Failed to fetch or save card" });
+  }
+};
 // GET all cards
 export const getAllCards = async (req: Request, res: Response) => {
   try {
