@@ -2,6 +2,53 @@ import axios from "axios";
 import { Request, Response } from "express";
 import Card, { ScryfallCard } from "../models/cardModel";
 
+export const test = async (req: Request, res: Response) => {
+  try {
+    console.log("Fetching cards from the database...");
+    const cards = await Card.find();
+    console.log("Cards fetched successfully:", cards);
+    res.status(200).json(cards);
+  } catch (err) {
+    console.error("Error fetching cards:", err);
+    res.status(500).json({ error: "Failed to fetch cards" });
+  }
+};
+// GET all cards
+export const getAllCards = async (req: Request, res: Response) => {
+  try {
+    const cards = await Card.find();
+    res.json(cards);
+  } catch (err) {
+    res.status(500).json({ error: "Failed to fetch cards" });
+  }
+};
+// GET – Search for cards in the database
+export const searchCards = async (
+  req: Request,
+  res: Response
+): Promise<void> => {
+  const { query } = req.query;
+
+  if (!query) {
+    res.status(400).json({ error: "Search query is required" });
+    return;
+  }
+
+  try {
+    console.log("Search query received:", query);
+
+    const cards = await Card.find({
+      name: { $regex: query, $options: "i" },
+    });
+
+    console.log("Search results:", cards);
+    res.status(200).json(cards);
+  } catch (err) {
+    console.error("Error during Card.find():", err);
+    res.status(500).json({ error: "Failed to fetch cards" });
+  }
+};
+
 export const addCardFromScryfall = async (
   req: Request,
   res: Response
@@ -40,15 +87,6 @@ export const addCardFromScryfall = async (
   } catch (err) {
     console.error("Failed to fetch or save card:", err);
     res.status(500).json({ error: "Failed to fetch or save card" });
-  }
-};
-// GET all cards
-export const getAllCards = async (req: Request, res: Response) => {
-  try {
-    const cards = await Card.find();
-    res.json(cards);
-  } catch (err) {
-    res.status(500).json({ error: "Failed to fetch cards" });
   }
 };
 
