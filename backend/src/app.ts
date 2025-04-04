@@ -7,6 +7,7 @@ import authRoutes from "./routes/authRoutes";
 import passport from "passport";
 import "./config/passport"; // Import the Passport configuration
 import session from "express-session";
+import MongoStore from "connect-mongo";
 
 const app = express();
 
@@ -17,6 +18,10 @@ app.use(
     secret: process.env.SESSION_SECRET || "your_secret_key", // Use a secure secret in production
     resave: false,
     saveUninitialized: false,
+    store: MongoStore.create({
+      mongoUrl: process.env.MONGO_URI, // Use your MongoDB connection string
+      collectionName: "sessions", // Optional: specify the collection name for sessions
+    }),
     cookie: {
       secure: false, // Set to true if using HTTPS
       httpOnly: true,
