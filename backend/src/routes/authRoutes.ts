@@ -2,6 +2,7 @@ import express from "express";
 import passport from "passport";
 
 const router = express.Router();
+const isProduction = process.env.NODE_ENV === "production";
 
 // Start Google OAuth login
 router.get(
@@ -14,7 +15,11 @@ router.get(
   "/google/callback",
   passport.authenticate("google", { failureRedirect: "/" }),
   (req, res) => {
-    res.redirect("/"); // Redirect after successful login
+    const frontendUrl = isProduction
+      ? "https://jhelgodt.github.io/Magic-Project" // Production frontend URL
+      : "http://localhost:4200/Magic-Project"; // Local frontend URL
+
+    res.redirect(`${frontendUrl}`); //
   }
 );
 
