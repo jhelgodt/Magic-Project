@@ -3,11 +3,29 @@ import cors from "cors";
 import mongoose from "mongoose";
 import cardRoutes from "./routes/cardRoutes";
 import deckRoutes from "./routes/deckRoutes";
+import authRoutes from "./routes/authRoutes";
+import passport from "passport";
+import "./config/passport"; // Import the Passport configuration
+import session from "express-session";
 
 const app = express();
 
 const allowedOrigins = ["http://localhost:4200", "https://jhelgodt.github.io"];
 
+app.use(
+  session({
+    secret: process.env.SESSION_SECRET || "your_secret_key", // Use a secure secret in production
+    resave: false,
+    saveUninitialized: false,
+    cookie: {
+      secure: false, // Set to true if using HTTPS
+      httpOnly: true,
+    },
+  })
+);
+app.use(passport.initialize());
+app.use(passport.session());
+app.use("/auth", authRoutes);
 app.use(
   cors({
     origin: (origin, callback) => {
@@ -30,6 +48,13 @@ app.use("/api/v1/decks", deckRoutes); // Add deck routes
 // Test route
 app.get("/", (req, res) => {
   res.send("API is running!");
+});
+app.get("/auth/user", (req, res) => {
+  if (req.isAuthenticated()) {
+    res.json(req.user); // Returns the logged-in user's profile
+  } else {
+    res.status(401).json({ error: "Not authenticated" });
+  }
 });
 
 // MongoDB connection
