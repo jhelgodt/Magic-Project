@@ -40,8 +40,17 @@
       <a href="#" class="navbar__link">Deck Builder</a>
       <a href="#card-builder" class="navbar__link">Card Builder</a>
 
-      <a href="#" class="navbar__link">Sign up</a>
-      <a href="#" class="navbar__link">Log in</a>
+      <!-- Login/Logout Buttons -->
+      <div *ngIf="!isLoggedIn" class="navbar__auth">
+        <a (click)="login()" class="navbar__link">Login</a>
+      </div>
+      <!-- When Logged In -->
+      <div *ngIf="isLoggedIn" class="navbar__auth">
+        <a href="#" class="navbar__link">Your Decks</a>
+        <a href="#" class="navbar__link">Collection</a>
+        <a href="#" class="navbar__link">Wish List</a>
+        <a (click)="logout()" class="navbar__link">Logout</a>
+      </div>
     </nav>
   </div>
 </header>

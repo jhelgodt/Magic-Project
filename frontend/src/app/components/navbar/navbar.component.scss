@@ -19,7 +19,17 @@
     align-items: center;
     justify-content: space-between;
   }
+  &__auth {
+    display: flex;
+    align-items: center;
+    gap: 2rem; // Lägg till detta för att få mellanrum mellan auth-länkarna
 
+    @media (max-width: 768px) {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 1rem;
+    }
+  }
   &__logo-img {
     height: 100px;
   }
