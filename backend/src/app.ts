@@ -23,8 +23,9 @@ app.use(
       collectionName: "sessions", // Optional: specify the collection name for sessions
     }),
     cookie: {
-      secure: false, // Set to true if using HTTPS
-      httpOnly: true,
+      maxAge: 24 * 60 * 60 * 1000, // 1 day session timeout (in milliseconds)
+      secure: process.env.NODE_ENV === "production", // Use secure cookies in production (requires HTTPS)
+      httpOnly: true, // Prevent client-side JavaScript from accessing the cookie
     },
   })
 );
