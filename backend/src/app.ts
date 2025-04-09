@@ -63,10 +63,13 @@ app.get("/auth/user", (req, res) => {
   }
 });
 
+export default app;
+app.get("/me", (req, res) => {
+  console.log("🔎 Session user:", req.user);
+  res.json(req.user || { message: "Not logged in" });
+});
 // MongoDB connection
 mongoose
   .connect(process.env.MONGO_URI as string)
   .then(() => console.log("Connected to MongoDB"))
   .catch((err) => console.error("MongoDB connection error:", err));
-
-export default app;
