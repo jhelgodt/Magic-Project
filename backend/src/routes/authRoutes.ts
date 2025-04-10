@@ -1,4 +1,4 @@
-import express from "express";
+import express, { NextFunction, Request, Response } from "express";
 import passport from "passport";
 
 const router = express.Router();
@@ -10,12 +10,20 @@ const frontendUrl = isProduction
 // Start Google OAuth login
 router.get(
   "/google",
+  (req: Request, res: Response, next: NextFunction) => {
+    console.log("Starting Google OAuth login...");
+    next();
+  },
   passport.authenticate("google", { scope: ["profile", "email"] })
 );
 
 // Handle Google OAuth callback
 router.get(
   "/google/callback",
+  (req: Request, res: Response, next: NextFunction) => {
+    console.log("Handling Google OAuth callback...");
+    next();
+  },
   passport.authenticate("google", { failureRedirect: "/" }),
   (req, res) => {
     res.redirect(`${frontendUrl}`); //

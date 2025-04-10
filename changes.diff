@@ -1,73 +1,481 @@
 diff --git a/backend/src/app.ts b/backend/src/app.ts
-index 85b0756..682e988 100644
+index 682e988..c5ef0f9 100644
 --- a/backend/src/app.ts
 +++ b/backend/src/app.ts
-@@ -63,10 +63,13 @@ app.get("/auth/user", (req, res) => {
+@@ -1,37 +1,62 @@
+-import express from "express";
++import express, { Request, Response, NextFunction } from "express";
+ import cors from "cors";
+ import mongoose from "mongoose";
++import session from "express-session";
++import MongoStore from "connect-mongo";
++import passport from "passport";
++import "./config/passport"; // Import Passport strategy
++
+ import cardRoutes from "./routes/cardRoutes";
+ import deckRoutes from "./routes/deckRoutes";
+ import authRoutes from "./routes/authRoutes";
+-import passport from "passport";
+-import "./config/passport"; // Import the Passport configuration
+-import session from "express-session";
+-import MongoStore from "connect-mongo";
+ 
+-const app = express();
++// Extend session object
++declare module "express-session" {
++  interface Session {
++    passport?: { user?: string };
++  }
++}
+ 
++const app = express();
+ const allowedOrigins = ["http://localhost:4200", "https://jhelgodt.github.io"];
+ 
++// ✅ Middleware: JSON parsing
++app.use(express.json());
++
++// ✅ Session config (must come before passport.session)
+ app.use(
+   session({
+-    secret: process.env.SESSION_SECRET || "your_secret_key", // Use a secure secret in production
++    secret: process.env.SESSION_SECRET || "your_secret_key",
+     resave: false,
+     saveUninitialized: false,
+     store: MongoStore.create({
+-      mongoUrl: process.env.MONGO_URI, // Use your MongoDB connection string
+-      collectionName: "sessions", // Optional: specify the collection name for sessions
++      mongoUrl: process.env.MONGO_URI,
++      collectionName: "sessions",
+     }),
+     cookie: {
+-      maxAge: 24 * 60 * 60 * 1000, // 1 day session timeout (in milliseconds)
+-      secure: process.env.NODE_ENV === "production", // Use secure cookies in production (requires HTTPS)
+-      httpOnly: true, // Prevent client-side JavaScript from accessing the cookie
++      maxAge: 24 * 60 * 60 * 1000,
++      secure: process.env.NODE_ENV === "production",
++      httpOnly: true,
+     },
+   })
+ );
++
++// ✅ Passport middleware
+ app.use(passport.initialize());
+ app.use(passport.session());
+-app.use("/auth", authRoutes);
++
++// ✅ Logging middleware (for debugging sessions)
++let count = 0;
++const showLogs = (req: Request, res: Response, next: NextFunction) => {
++  count++;
++  console.log(`count: ${count}`);
++  console.log("req.session.passport:", req.session.passport);
++  console.log("req.user:", req.user);
++  next();
++};
++app.use(showLogs);
++
++// ✅ CORS config
+ app.use(
+   cors({
+     origin: (origin, callback) => {
+@@ -45,31 +70,34 @@ app.use(
+     credentials: true,
+   })
+ );
+-app.use(express.json());
+ 
+-// Routes
+-app.use("/api/v1/cards", cardRoutes); // Add card routes
+-app.use("/api/v1/decks", deckRoutes); // Add deck routes
++// ✅ Routes
++app.use("/auth", authRoutes);
++app.use("/api/v1/cards", cardRoutes);
++app.use("/api/v1/decks", deckRoutes);
+ 
+-// Test route
++// ✅ Test routes
+ app.get("/", (req, res) => {
+   res.send("API is running!");
+ });
++
+ app.get("/auth/user", (req, res) => {
+   if (req.isAuthenticated()) {
+-    res.json(req.user); // Returns the logged-in user's profile
++    res.json(req.user);
+   } else {
+     res.status(401).json({ error: "Not authenticated" });
    }
  });
  
-+export default app;
-+app.get("/me", (req, res) => {
-+  console.log("🔎 Session user:", req.user);
-+  res.json(req.user || { message: "Not logged in" });
-+});
- // MongoDB connection
+-export default app;
+ app.get("/me", (req, res) => {
+   console.log("🔎 Session user:", req.user);
+   res.json(req.user || { message: "Not logged in" });
+ });
+-// MongoDB connection
++
++// ✅ Connect to MongoDB
  mongoose
    .connect(process.env.MONGO_URI as string)
    .then(() => console.log("Connected to MongoDB"))
    .catch((err) => console.error("MongoDB connection error:", err));
--
--export default app;
++
++export default app;
 diff --git a/backend/src/config/passport.ts b/backend/src/config/passport.ts
-index 82c9c60..7455edd 100644
+index 7455edd..831fec8 100644
 --- a/backend/src/config/passport.ts
 +++ b/backend/src/config/passport.ts
-@@ -1,5 +1,6 @@
- import passport from "passport";
- import { Strategy as GoogleStrategy } from "passport-google-oauth20";
-+import User, { IUser } from "../models/userModel"; // Importera din user-model
- 
- const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID!;
- const GOOGLE_CLIENT_SECRET = process.env.GOOGLE_CLIENT_SECRET!;
-@@ -11,16 +12,35 @@ passport.use(
-       clientSecret: GOOGLE_CLIENT_SECRET,
-       callbackURL: "/auth/google/callback",
-     },
--    (accessToken, refreshToken, profile, done) => {
--      // Here, you can save the user to your database
--      // For now, we'll just return the profile
--      return done(null, profile);
-+    async (accessToken, refreshToken, profile, done) => {
-+      try {
-+        console.log("🔁 Google profile:", profile);
-+
-+        const existingUser = await User.findOne({ googleId: profile.id });
-+        console.log("Checking for existing user...");
-+        if (existingUser) {
-+          console.log("✅ Found existing user:", existingUser);
-+          return done(null, existingUser);
-+        }
-+
-+        const newUser = await User.create({
-+          googleId: profile.id,
-+          name: profile.displayName,
-+          email: profile.emails?.[0]?.value || "",
-+        });
-+
-+        console.log("🆕 Created new user:", newUser);
-+        return done(null, newUser);
-+      } catch (error) {
-+        console.error("❌ Error in Google strategy:", error);
-+        return done(error, undefined);
-+      }
-     }
-   )
+@@ -40,7 +40,8 @@ passport.use(
  );
  
--passport.serializeUser((user, done) => {
--  done(null, user);
-+passport.serializeUser((user: any, done) => {
-+  done(null, user._id); // ✅ spara bara _id i session
+ passport.serializeUser((user: any, done) => {
+-  done(null, user._id); // ✅ spara bara _id i session
++  console.log("🔍 serializeUser called with user:", user);
++  done(null, user._id); // ✅ Save only _id in session
  });
  
  interface User {
+@@ -50,6 +51,19 @@ interface User {
+   // Add other fields as needed
+ }
+ 
+-passport.deserializeUser((obj: User | null, done) => {
+-  done(null, obj);
++passport.deserializeUser(async (id: string, done) => {
++  console.log("🔍 deserializeUser called with ID:", id);
++  try {
++    console.log("🔍 Attempting to find user in database with ID:", id);
++    const user = await User.findById(id); // Retrieve the user by _id from the database
++    if (!user) {
++      console.warn("⚠️ No user found with ID:", id);
++      return done(null, false); // No user found
++    }
++    console.log("✅ User found:", user);
++    done(null, user); // Pass the full user object to the session
++  } catch (error) {
++    console.error("❌ Error in deserializeUser:", error);
++    done(error, null);
++  }
+ });
+diff --git a/backend/src/controllers/deckController.ts b/backend/src/controllers/deckController.ts
+index a5b53ff..8382694 100644
+--- a/backend/src/controllers/deckController.ts
++++ b/backend/src/controllers/deckController.ts
+@@ -1,7 +1,19 @@
+-import { Request, Response } from "express";
++import { Request, Response, RequestHandler } from "express";
+ import Deck from "../models/deckModel";
++import { IUser } from "../models/userModel";
+ 
+-export const addCardToDeck = async (req: Request, res: Response) => {
++// 👇 Utökar Express-typerna så TypeScript vet att req.user existerar
++declare global {
++  namespace Express {
++    interface User extends IUser {}
++    interface Request {
++      user?: IUser;
++    }
++  }
++}
++
++// 🔁 Lägg till ett kort i en deck
++export const addCardToDeck: RequestHandler = async (req, res) => {
+   try {
+     const { cardId } = req.body;
+     const deck = await Deck.findByIdAndUpdate(
+@@ -9,73 +21,98 @@ export const addCardToDeck = async (req: Request, res: Response) => {
+       { $push: { cards: cardId } },
+       { new: true }
+     ).populate("cards");
++
+     if (!deck) {
+       res.status(404).json({ error: "Deck not found" });
+       return;
+     }
++
+     res.json(deck);
++    return;
+   } catch (err) {
+     res.status(400).json({ error: "Failed to add card to deck" });
++    return;
+   }
+ };
+-// GET all decks
+-export const getAllDecks = async (req: Request, res: Response) => {
++
++// 📄 Hämta alla decks för den inloggade användaren
++export const getAllDecks: RequestHandler = async (req, res) => {
++  if (!req.user) {
++    res.status(401).json({ error: "Not authenticated" });
++    return;
++  }
++
+   try {
+-    const decks = await Deck.find().populate("cards"); // Populate card details
++    const decks = await Deck.find({ user: req.user._id }).populate("cards");
+     res.json(decks);
+   } catch (err) {
+-    res.status(500).json({ error: "Failed to fetch decks" });
++    res.status(500).json({ error: "Failed to fetch your decks" });
+   }
+ };
+ 
+-// GET a deck by ID
+-export const getDeckById = async (req: Request, res: Response) => {
++// 📄 Hämta en enskild deck
++export const getDeckById: RequestHandler = async (req, res) => {
+   try {
+     const deck = await Deck.findById(req.params.id).populate("cards");
++
+     if (!deck) {
+       res.status(404).json({ error: "Deck not found" });
+       return;
+     }
++
+     res.json(deck);
+   } catch (err) {
+     res.status(500).json({ error: "Failed to fetch deck" });
+   }
+ };
+ 
+-// POST – create a new deck
+-export const createDeck = async (req: Request, res: Response) => {
++// ➕ Skapa ny deck kopplad till användare
++export const createDeck: RequestHandler = async (req, res) => {
++  if (!req.user) {
++    res.status(401).json({ error: "Not authenticated" });
++    return;
++  }
++
+   try {
+-    const newDeck = await Deck.create(req.body);
++    const newDeck = await Deck.create({
++      ...req.body,
++      user: req.user._id,
++    });
++
+     res.status(201).json(newDeck);
+   } catch (err) {
+     res.status(400).json({ error: "Failed to create deck" });
+   }
+ };
+ 
+-// DELETE a deck
+-export const deleteDeck = async (req: Request, res: Response) => {
++// ❌ Ta bort deck
++export const deleteDeck: RequestHandler = async (req, res) => {
+   try {
+     const deletedDeck = await Deck.findByIdAndDelete(req.params.id);
++
+     if (!deletedDeck) {
+       res.status(404).json({ error: "Deck not found" });
+       return;
+     }
++
+     res.json({ message: "Deck deleted" });
+   } catch (err) {
+     res.status(500).json({ error: "Failed to delete deck" });
+   }
+ };
+ 
+-// PUT – update a deck
+-export const updateDeck = async (req: Request, res: Response) => {
++// ✏️ Uppdatera deck
++export const updateDeck: RequestHandler = async (req, res) => {
+   try {
+     const updatedDeck = await Deck.findByIdAndUpdate(req.params.id, req.body, {
+       new: true,
+     });
++
+     if (!updatedDeck) {
+       res.status(404).json({ error: "Deck not found" });
+       return;
+     }
++
+     res.json(updatedDeck);
+   } catch (err) {
+     res.status(400).json({ error: "Failed to update deck" });
+diff --git a/backend/src/routes/authRoutes.ts b/backend/src/routes/authRoutes.ts
+index b148ac5..8621ef6 100644
+--- a/backend/src/routes/authRoutes.ts
++++ b/backend/src/routes/authRoutes.ts
+@@ -1,4 +1,4 @@
+-import express from "express";
++import express, { NextFunction, Request, Response } from "express";
+ import passport from "passport";
+ 
+ const router = express.Router();
+@@ -10,12 +10,20 @@ const frontendUrl = isProduction
+ // Start Google OAuth login
+ router.get(
+   "/google",
++  (req: Request, res: Response, next: NextFunction) => {
++    console.log("Starting Google OAuth login...");
++    next();
++  },
+   passport.authenticate("google", { scope: ["profile", "email"] })
+ );
+ 
+ // Handle Google OAuth callback
+ router.get(
+   "/google/callback",
++  (req: Request, res: Response, next: NextFunction) => {
++    console.log("Handling Google OAuth callback...");
++    next();
++  },
+   passport.authenticate("google", { failureRedirect: "/" }),
+   (req, res) => {
+     res.redirect(`${frontendUrl}`); //
+diff --git a/changes.diff b/changes.diff
+index 610c609..82709e9 100644
+--- a/changes.diff
++++ b/changes.diff
+@@ -1,73 +0,0 @@
+-diff --git a/backend/src/app.ts b/backend/src/app.ts
+-index 85b0756..682e988 100644
+---- a/backend/src/app.ts
+-+++ b/backend/src/app.ts
+-@@ -63,10 +63,13 @@ app.get("/auth/user", (req, res) => {
+-   }
+- });
+- 
+-+export default app;
+-+app.get("/me", (req, res) => {
+-+  console.log("🔎 Session user:", req.user);
+-+  res.json(req.user || { message: "Not logged in" });
+-+});
+- // MongoDB connection
+- mongoose
+-   .connect(process.env.MONGO_URI as string)
+-   .then(() => console.log("Connected to MongoDB"))
+-   .catch((err) => console.error("MongoDB connection error:", err));
+--
+--export default app;
+-diff --git a/backend/src/config/passport.ts b/backend/src/config/passport.ts
+-index 82c9c60..7455edd 100644
+---- a/backend/src/config/passport.ts
+-+++ b/backend/src/config/passport.ts
+-@@ -1,5 +1,6 @@
+- import passport from "passport";
+- import { Strategy as GoogleStrategy } from "passport-google-oauth20";
+-+import User, { IUser } from "../models/userModel"; // Importera din user-model
+- 
+- const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID!;
+- const GOOGLE_CLIENT_SECRET = process.env.GOOGLE_CLIENT_SECRET!;
+-@@ -11,16 +12,35 @@ passport.use(
+-       clientSecret: GOOGLE_CLIENT_SECRET,
+-       callbackURL: "/auth/google/callback",
+-     },
+--    (accessToken, refreshToken, profile, done) => {
+--      // Here, you can save the user to your database
+--      // For now, we'll just return the profile
+--      return done(null, profile);
+-+    async (accessToken, refreshToken, profile, done) => {
+-+      try {
+-+        console.log("🔁 Google profile:", profile);
+-+
+-+        const existingUser = await User.findOne({ googleId: profile.id });
+-+        console.log("Checking for existing user...");
+-+        if (existingUser) {
+-+          console.log("✅ Found existing user:", existingUser);
+-+          return done(null, existingUser);
+-+        }
+-+
+-+        const newUser = await User.create({
+-+          googleId: profile.id,
+-+          name: profile.displayName,
+-+          email: profile.emails?.[0]?.value || "",
+-+        });
+-+
+-+        console.log("🆕 Created new user:", newUser);
+-+        return done(null, newUser);
+-+      } catch (error) {
+-+        console.error("❌ Error in Google strategy:", error);
+-+        return done(error, undefined);
+-+      }
+-     }
+-   )
+- );
+- 
+--passport.serializeUser((user, done) => {
+--  done(null, user);
+-+passport.serializeUser((user: any, done) => {
+-+  done(null, user._id); // ✅ spara bara _id i session
+- });
+- 
+- interface User {
+diff --git a/frontend/src/app/services/deck.service.ts b/frontend/src/app/services/deck.service.ts
+index eaa53b1..a1bbf79 100644
+--- a/frontend/src/app/services/deck.service.ts
++++ b/frontend/src/app/services/deck.service.ts
+@@ -8,40 +8,53 @@ import { Observable } from "rxjs";
+ export class DeckService {
+   private API_URL: string;
+ 
+-  constructor(
+-    private http: HttpClient,
+-    @Inject("API_URL") apiUrl: string // Inject the API_URL from app.config.ts
+-  ) {
+-    this.API_URL = `${apiUrl}/api/v1`; // Add /api/v1 to the base URL
++  constructor(private http: HttpClient, @Inject("API_URL") apiUrl: string) {
++    this.API_URL = `${apiUrl}/api/v1`;
+   }
+ 
+-  // Fetch all decks
++  // Fetch all decks (auth required)
+   getAllDecks(): Observable<any> {
+-    return this.http.get(`${this.API_URL}/decks`);
++    return this.http.get(`${this.API_URL}/decks`, {
++      withCredentials: true,
++    });
+   }
+ 
+-  // Get a deck by ID
++  // Get a deck by ID (auth required)
+   getDeckById(deckId: string): Observable<any> {
+-    return this.http.get(`${this.API_URL}/decks/${deckId}`);
++    return this.http.get(`${this.API_URL}/decks/${deckId}`, {
++      withCredentials: true,
++    });
+   }
+ 
+-  // Create a new deck
++  // Create a new deck (auth required)
+   createDeck(deckData: any): Observable<any> {
+-    return this.http.post(`${this.API_URL}/decks`, deckData);
++    return this.http.post(`${this.API_URL}/decks`, deckData, {
++      withCredentials: true,
++    });
+   }
+ 
+-  // Update a deck
++  // Update a deck (auth required)
+   updateDeck(deckId: string, deckData: any): Observable<any> {
+-    return this.http.put(`${this.API_URL}/decks/${deckId}`, deckData);
++    return this.http.put(`${this.API_URL}/decks/${deckId}`, deckData, {
++      withCredentials: true,
++    });
+   }
+ 
+-  // Delete a deck
++  // Delete a deck (auth required)
+   deleteDeck(deckId: string): Observable<any> {
+-    return this.http.delete(`${this.API_URL}/decks/${deckId}`);
++    return this.http.delete(`${this.API_URL}/decks/${deckId}`, {
++      withCredentials: true,
++    });
+   }
+ 
+-  // Add a card to a deck
++  // Add a card to a deck (auth required)
+   addCardToDeck(deckId: string, cardId: string): Observable<any> {
+-    return this.http.post(`${this.API_URL}/decks/${deckId}/cards`, { cardId });
++    return this.http.put(
++      `${this.API_URL}/decks/${deckId}/add-card`,
++      { cardId },
++      {
++        withCredentials: true,
++      }
++    );
+   }
+ }

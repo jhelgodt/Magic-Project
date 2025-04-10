@@ -40,7 +40,8 @@ passport.use(
 );
 
 passport.serializeUser((user: any, done) => {
-  done(null, user._id); // ✅ spara bara _id i session
+  console.log("🔍 serializeUser called with user:", user);
+  done(null, user._id); // ✅ Save only _id in session
 });
 
 interface User {
@@ -50,6 +51,19 @@ interface User {
   // Add other fields as needed
 }
 
-passport.deserializeUser((obj: User | null, done) => {
-  done(null, obj);
+passport.deserializeUser(async (id: string, done) => {
+  console.log("🔍 deserializeUser called with ID:", id);
+  try {
+    console.log("🔍 Attempting to find user in database with ID:", id);
+    const user = await User.findById(id); // Retrieve the user by _id from the database
+    if (!user) {
+      console.warn("⚠️ No user found with ID:", id);
+      return done(null, false); // No user found
+    }
+    console.log("✅ User found:", user);
+    done(null, user); // Pass the full user object to the session
+  } catch (error) {
+    console.error("❌ Error in deserializeUser:", error);
+    done(error, null);
+  }
 });
