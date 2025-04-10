@@ -12,6 +12,12 @@ export class DeckService {
     this.API_URL = `${apiUrl}/api/v1`;
   }
 
+  getPublicDecks(): Observable<any> {
+    return this.http.get(`${this.API_URL}/decks/public`, {
+      withCredentials: true, // valfritt, men säkert
+    });
+  }
+
   // Fetch all decks (auth required)
   getAllDecks(): Observable<any> {
     return this.http.get(`${this.API_URL}/decks`, {

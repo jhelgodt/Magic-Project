@@ -1,10 +1,12 @@
-import { Component, OnInit } from "@angular/core";
-import { HttpClient } from "@angular/common/http";
+import { Component, OnInit, ChangeDetectorRef } from "@angular/core";
 import { Router } from "@angular/router";
-import { API_URL } from "../../app.config";
-import { ChangeDetectorRef } from "@angular/core";
-import { CommonModule } from "@angular/common"; // Import CommonModule
-import { FormBuilder, FormGroup, ReactiveFormsModule } from "@angular/forms";
+import { CommonModule } from "@angular/common";
+import {
+  FormBuilder,
+  FormGroup,
+  ReactiveFormsModule,
+  Validators,
+} from "@angular/forms";
 import { DeckService } from "../../services/deck.service";
 
 @Component({
@@ -22,25 +24,82 @@ export class DeckBuilderComponent implements OnInit {
     private deckService: DeckService,
     private router: Router,
     private cdr: ChangeDetectorRef,
-    private fb: FormBuilder // Inject FormBuilder here
+    private fb: FormBuilder
   ) {
     this.newDeckForm = this.fb.group({
-      name: [""],
-      description: [""],
+      name: ["", Validators.required],
+      description: ["", Validators.required],
+      isPublic: [false], // ✅ Ny form control
     });
   }
 
   ngOnInit(): void {
-    this.deckService.getAllDecks().subscribe((data) => {
-      this.decks = data;
+    this.loadDecks();
+  }
+
+  loadDecks(): void {
+    // Skapa två parallella anrop
+    const userDecks$ = this.deckService.getAllDecks();
+    const publicDecks$ = this.deckService.getPublicDecks();
+
+    userDecks$.subscribe({
+      next: (userDecks) => {
+        publicDecks$.subscribe({
+          next: (publicDecks) => {
+            // Filtrera bort duplicerade (t.ex. om användarens deck också är publik)
+            const uniquePublicDecks = publicDecks.filter(
+              (publicDeck: any) =>
+                !userDecks.some(
+                  (userDeck: any) => userDeck._id === publicDeck._id
+                )
+            );
+
+            this.decks = [...userDecks, ...uniquePublicDecks];
+            this.cdr.detectChanges();
+          },
+          error: (err) => {
+            console.error("Failed to fetch public decks:", err);
+          },
+        });
+      },
+      error: (err) => {
+        // Om användaren inte är inloggad, hämta bara publika decks
+        if (err.status === 401) {
+          publicDecks$.subscribe({
+            next: (publicDecks) => {
+              this.decks = publicDecks;
+              this.cdr.detectChanges();
+            },
+            error: (err2) => {
+              console.error(
+                "Failed to fetch public decks (unauthenticated):",
+                err2
+              );
+            },
+          });
+        } else {
+          console.error("Failed to fetch user decks:", err);
+        }
+      },
     });
   }
 
   createDeck(): void {
+    if (this.newDeckForm.invalid) {
+      return;
+    }
+
     const newDeck = this.newDeckForm.value;
-    this.deckService.createDeck(newDeck).subscribe((data) => {
-      this.decks.push(data);
-      this.newDeckForm.reset();
+
+    this.deckService.createDeck(newDeck).subscribe({
+      next: (createdDeck) => {
+        this.decks.push(createdDeck);
+        this.newDeckForm.reset({ isPublic: false }); // 🔁 behåll false som default
+        this.cdr.detectChanges();
+      },
+      error: (err) => {
+        console.error("Failed to create deck:", err);
+      },
     });
   }
 

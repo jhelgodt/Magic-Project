@@ -24,6 +24,7 @@
       align-items: center;
     }
 
+    // Input och textarea från tidigare
     &__input,
     &__textarea {
       width: 100%;
@@ -36,6 +37,22 @@
 
     &__button {
       @include nav-link-resume;
+    }
+
+    // Ny stil för checkbox-label: visar checkboxen och texten snyggt
+    &__checkbox-label {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-size: 1rem;
+      color: $color-text-dark;
+      user-select: none;
+    }
+
+    // Liten stil för checkboxen
+    &__checkbox {
+      width: 1rem;
+      height: 1rem;
     }
   }
 
@@ -71,6 +88,22 @@
 
     &__button {
       @include nav-link-resume;
+      margin-top: 1rem;
+    }
+
+    // Ny meta-sektion för extra info, exempelvis public tag
+    &__meta {
+      margin-bottom: 1rem;
+    }
+
+    // Ny stil för en public tag
+    &__tag {
+      display: inline-block;
+      padding: 0.25rem 0.5rem;
+      background-color: $color-primary-light; // Se till att din _variables.scss har en lämplig färg
+      color: $color-text-dark;
+      font-size: 0.875rem;
+      border-radius: 4px;
     }
   }
 }

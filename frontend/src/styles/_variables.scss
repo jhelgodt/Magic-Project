@@ -1,11 +1,17 @@
 // 🎨 Färger
-$color-primary: #007aff; // En mer modern blå (lik Apple blue)
-$color-accent: #ff6b6b; // En kontrastfärg för t.ex. call-to-actions
+$color-primary: #007aff; // Apple blue
+$color-primary-light: #66b3ff; // Ljusare blå för hover eller bakgrunder
+$color-primary-dark: #0051b3; // Mörkare blå för aktiva tillstånd
 
-$color-bg-light: #ffffff; // 👈 vit bakgrund
+$color-accent: #ff6b6b; // Accentfärg (t.ex. röd/orange CTA)
+$color-accent-light: #ffa8a8;
+$color-accent-dark: #cc4c4c;
+
+$color-bg-light: #ffffff;
 $color-bg-dark: #121212;
 
-$color-text-dark: #111111; // lite mörkare än din nuvarande #222 för bättre kontrast
-$color-text-muted: #666;
+$color-text-dark: #111111;
+$color-text-muted: #666666;
 $color-text-light: #ffffff;
+
 $color-border: #e0e0e0;

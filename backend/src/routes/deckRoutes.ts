@@ -6,10 +6,12 @@ import {
   deleteDeck,
   updateDeck,
   addCardToDeck,
+  getPublicDecks,
 } from "../controllers/deckController";
 
 const router = express.Router();
 
+router.get("/public", getPublicDecks); // 👈 detta är tillgängligt utan inloggning
 router.get("/", getAllDecks);
 router.get("/:id", getDeckById);
 router.post("/", createDeck);

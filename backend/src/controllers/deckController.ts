@@ -12,6 +12,14 @@ declare global {
   }
 }
 
+export const getPublicDecks: RequestHandler = async (req, res) => {
+  try {
+    const publicDecks = await Deck.find({ isPublic: true }).populate("cards");
+    res.json(publicDecks);
+  } catch (err) {
+    res.status(500).json({ error: "Failed to fetch public decks" });
+  }
+};
 // 🔁 Lägg till ett kort i en deck
 export const addCardToDeck: RequestHandler = async (req, res) => {
   try {
