@@ -18,13 +18,25 @@ declare module "express-session" {
 }
 
 const app = express();
-const allowedOrigins = ["http://localhost:4200", "https://jhelgodt.github.io"];
+const isProduction = process.env.NODE_ENV === "production";
+const allowedOrigin = isProduction
+  ? "https://jhelgodt.github.io"
+  : "http://localhost:4200";
+
+// ✅ CORS config (must come before session!)
+app.use(
+  cors({
+    origin: allowedOrigin, // Exact string, not array or function
+    credentials: true, // Allow sending cookies
+    methods: ["GET", "POST", "PUT", "DELETE"],
+  })
+);
 
 // ✅ Middleware: JSON parsing
 app.use(express.json());
-app.set("trust proxy", 1); // Trust the first proxy
+app.set("trust proxy", 1); // Trust the first proxy (needed for secure cookies)
 
-// ✅ Session config (must come before passport.session)
+// ✅ Session config (after CORS)
 app.use(
   session({
     secret: process.env.SESSION_SECRET || "your_secret_key",
@@ -35,9 +47,10 @@ app.use(
       collectionName: "sessions",
     }),
     cookie: {
-      maxAge: 24 * 60 * 60 * 1000,
-      secure: process.env.NODE_ENV === "production",
+      maxAge: 24 * 60 * 60 * 1000, // 1 day
+      secure: isProduction, // Only over HTTPS in production
       httpOnly: true,
+      sameSite: isProduction ? "none" : "lax", // Required for cross-site cookies
     },
   })
 );
@@ -56,21 +69,6 @@ const showLogs = (req: Request, res: Response, next: NextFunction) => {
   next();
 };
 app.use(showLogs);
-
-// ✅ CORS config
-app.use(
-  cors({
-    origin: (origin, callback) => {
-      if (!origin || allowedOrigins.includes(origin)) {
-        callback(null, true);
-      } else {
-        callback(new Error("Not allowed by CORS"));
-      }
-    },
-    methods: ["GET", "POST", "PUT", "DELETE"],
-    credentials: true,
-  })
-);
 
 // ✅ Routes
 app.use("/auth", authRoutes);
