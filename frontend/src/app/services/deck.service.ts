@@ -14,50 +14,45 @@ export class DeckService {
 
   getPublicDecks(): Observable<any> {
     return this.http.get(`${this.API_URL}/decks/public`, {
-      withCredentials: true, // valfritt, men säkert
+      withCredentials: true,
     });
   }
 
-  // Fetch all decks (auth required)
   getAllDecks(): Observable<any> {
     return this.http.get(`${this.API_URL}/decks`, {
       withCredentials: true,
     });
   }
 
-  // Get a deck by ID (auth required)
   getDeckById(deckId: string): Observable<any> {
     return this.http.get(`${this.API_URL}/decks/${deckId}`, {
       withCredentials: true,
     });
   }
 
-  // Create a new deck (auth required)
   createDeck(deckData: any): Observable<any> {
     return this.http.post(`${this.API_URL}/decks`, deckData, {
       withCredentials: true,
     });
   }
 
-  // Update a deck (auth required)
   updateDeck(deckId: string, deckData: any): Observable<any> {
     return this.http.put(`${this.API_URL}/decks/${deckId}`, deckData, {
       withCredentials: true,
     });
   }
 
-  // Delete a deck (auth required)
   deleteDeck(deckId: string): Observable<any> {
     return this.http.delete(`${this.API_URL}/decks/${deckId}`, {
       withCredentials: true,
     });
   }
 
-  // Add a card to a deck (auth required)
-  addCardToDeck(deckId: string, cardId: string): Observable<any> {
+  // ✅ Skicka hela kortobjektet till backend istället för bara ett ID
+  addCardToDeck(deckId: string, card: any): Observable<any> {
     return this.http.put(
       `${this.API_URL}/decks/${deckId}/add-card`,
-      { cardId },
+      { card },
       {
         withCredentials: true,
       }

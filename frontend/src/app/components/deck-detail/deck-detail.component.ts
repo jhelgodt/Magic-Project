@@ -40,17 +40,14 @@ export class DeckDetailComponent implements OnInit {
 
   // Search for cards in the database
   searchCards(): void {
-    if (!this.searchQuery) {
-      console.error("Search query is required.");
-      return;
-    }
+    if (!this.searchQuery) return;
 
-    this.cardService.searchCards(this.searchQuery).subscribe({
-      next: (data) => {
-        this.searchResults = data; // Store the search results
+    this.cardService.searchScryfall(this.searchQuery).subscribe({
+      next: (response) => {
+        this.searchResults = response.data || []; // Scryfall returnerar .data[]
       },
       error: (err) => {
-        console.error("Failed to search for cards:", err);
+        console.error("Failed to search Scryfall:", err);
         this.searchResults = [];
       },
     });
@@ -65,12 +62,12 @@ export class DeckDetailComponent implements OnInit {
 
     const deckId = this.route.snapshot.paramMap.get("id");
     if (deckId) {
-      this.deckService.addCardToDeck(deckId, this.selectedCard._id).subscribe({
+      this.deckService.addCardToDeck(deckId, this.selectedCard).subscribe({
         next: (data) => {
-          this.deck = data; // Update the deck with the new card
-          this.searchResults = []; // Clear search results
-          this.searchQuery = ""; // Reset input
-          this.selectedCard = null; // Reset selected card
+          this.deck = data;
+          this.searchResults = [];
+          this.searchQuery = "";
+          this.selectedCard = null;
         },
         error: (err) => {
           console.error("Failed to add card to deck:", err);

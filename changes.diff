@@ -1,907 +1,1837 @@
-diff --git a/backend/src/app.ts b/backend/src/app.ts
-index c5ef0f9..13cf304 100644
---- a/backend/src/app.ts
-+++ b/backend/src/app.ts
-@@ -22,6 +22,7 @@ const allowedOrigins = ["http://localhost:4200", "https://jhelgodt.github.io"];
+diff --git a/backend/src/controllers/deckController.ts b/backend/src/controllers/deckController.ts
+index 7cce2d5..9adbfec 100644
+--- a/backend/src/controllers/deckController.ts
++++ b/backend/src/controllers/deckController.ts
+@@ -14,21 +14,22 @@ declare global {
  
- // ✅ Middleware: JSON parsing
- app.use(express.json());
-+app.set("trust proxy", 1); // Trust the first proxy
- 
- // ✅ Session config (must come before passport.session)
- app.use(
-diff --git a/backend/src/config/passport.ts b/backend/src/config/passport.ts
-index 831fec8..99d03e4 100644
---- a/backend/src/config/passport.ts
-+++ b/backend/src/config/passport.ts
-@@ -1,23 +1,28 @@
- import passport from "passport";
- import { Strategy as GoogleStrategy } from "passport-google-oauth20";
--import User, { IUser } from "../models/userModel"; // Importera din user-model
-+import User from "../models/userModel"; // Din user-model
- 
--const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID!;
--const GOOGLE_CLIENT_SECRET = process.env.GOOGLE_CLIENT_SECRET!;
-+const { GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, GOOGLE_CALLBACK_URL } =
-+  process.env;
+ export const getPublicDecks: RequestHandler = async (req, res) => {
+   try {
+-    const publicDecks = await Deck.find({ isPublic: true }).populate("cards");
++    const publicDecks = await Deck.find({ isPublic: true });
+     res.json(publicDecks);
+   } catch (err) {
+     res.status(500).json({ error: "Failed to fetch public decks" });
+   }
+ };
+-// 🔁 Lägg till ett kort i en deck
 +
-+if (!GOOGLE_CLIENT_ID || !GOOGLE_CLIENT_SECRET || !GOOGLE_CALLBACK_URL) {
-+  throw new Error("❌ Missing Google OAuth environment variables.");
-+}
-+
-+console.log("✅ GOOGLE_CALLBACK_URL loaded:", GOOGLE_CALLBACK_URL);
++// 🔁 Lägg till ett kort i en deck (nu sparar vi hela kortobjektet istället för bara ID)
+ export const addCardToDeck: RequestHandler = async (req, res) => {
+   try {
+-    const { cardId } = req.body;
++    const { card } = req.body;
+     const deck = await Deck.findByIdAndUpdate(
+       req.params.id,
+-      { $push: { cards: cardId } },
++      { $push: { cards: card } },
+       { new: true }
+-    ).populate("cards");
++    );
  
- passport.use(
-   new GoogleStrategy(
-     {
-       clientID: GOOGLE_CLIENT_ID,
-       clientSecret: GOOGLE_CLIENT_SECRET,
--      callbackURL: "/auth/google/callback",
-+      callbackURL: GOOGLE_CALLBACK_URL,
-     },
-     async (accessToken, refreshToken, profile, done) => {
-       try {
--        console.log("🔁 Google profile:", profile);
-+        console.log("🔁 Received Google profile:", profile);
- 
-         const existingUser = await User.findOne({ googleId: profile.id });
--        console.log("Checking for existing user...");
-         if (existingUser) {
-           console.log("✅ Found existing user:", existingUser);
-           return done(null, existingUser);
-@@ -32,7 +37,7 @@ passport.use(
-         console.log("🆕 Created new user:", newUser);
-         return done(null, newUser);
-       } catch (error) {
--        console.error("❌ Error in Google strategy:", error);
-+        console.error("❌ Error in Google OAuth strategy:", error);
-         return done(error, undefined);
-       }
+     if (!deck) {
+       res.status(404).json({ error: "Deck not found" });
+@@ -36,14 +37,11 @@ export const addCardToDeck: RequestHandler = async (req, res) => {
      }
-@@ -40,28 +45,20 @@ passport.use(
- );
  
- passport.serializeUser((user: any, done) => {
--  console.log("🔍 serializeUser called with user:", user);
--  done(null, user._id); // ✅ Save only _id in session
-+  console.log("🔐 serializeUser:", user);
-+  done(null, user._id);
+     res.json(deck);
+-    return;
+   } catch (err) {
+     res.status(400).json({ error: "Failed to add card to deck" });
+-    return;
+   }
+ };
+ 
+-// 📄 Hämta alla decks för den inloggade användaren
+ export const getAllDecks: RequestHandler = async (req, res) => {
+   if (!req.user) {
+     res.status(401).json({ error: "Not authenticated" });
+@@ -51,17 +49,16 @@ export const getAllDecks: RequestHandler = async (req, res) => {
+   }
+ 
+   try {
+-    const decks = await Deck.find({ user: req.user._id }).populate("cards");
++    const decks = await Deck.find({ user: req.user._id });
+     res.json(decks);
+   } catch (err) {
+     res.status(500).json({ error: "Failed to fetch your decks" });
+   }
+ };
+ 
+-// 📄 Hämta en enskild deck
+ export const getDeckById: RequestHandler = async (req, res) => {
+   try {
+-    const deck = await Deck.findById(req.params.id).populate("cards");
++    const deck = await Deck.findById(req.params.id);
+ 
+     if (!deck) {
+       res.status(404).json({ error: "Deck not found" });
+@@ -74,7 +71,6 @@ export const getDeckById: RequestHandler = async (req, res) => {
+   }
+ };
+ 
+-// ➕ Skapa ny deck kopplad till användare
+ export const createDeck: RequestHandler = async (req, res) => {
+   if (!req.user) {
+     res.status(401).json({ error: "Not authenticated" });
+@@ -93,7 +89,6 @@ export const createDeck: RequestHandler = async (req, res) => {
+   }
+ };
+ 
+-// ❌ Ta bort deck
+ export const deleteDeck: RequestHandler = async (req, res) => {
+   try {
+     const deletedDeck = await Deck.findByIdAndDelete(req.params.id);
+@@ -109,7 +104,6 @@ export const deleteDeck: RequestHandler = async (req, res) => {
+   }
+ };
+ 
+-// ✏️ Uppdatera deck
+ export const updateDeck: RequestHandler = async (req, res) => {
+   try {
+     const updatedDeck = await Deck.findByIdAndUpdate(req.params.id, req.body, {
+diff --git a/backend/src/models/deckModel.ts b/backend/src/models/deckModel.ts
+index c025a31..18a29a3 100644
+--- a/backend/src/models/deckModel.ts
++++ b/backend/src/models/deckModel.ts
+@@ -3,17 +3,17 @@ import mongoose, { Schema, Document } from "mongoose";
+ export interface IDeck extends Document {
+   name: string;
+   description: string;
+-  cards: mongoose.Types.ObjectId[]; // Array of Card IDs
+-  user: mongoose.Types.ObjectId; // Nytt fält för att koppla till användare
+-  isPublic: boolean; // Nytt fält för att ange om decket är offentligt
++  cards: any[]; // Ändrat från ObjectId[] till any[]
++  user: mongoose.Types.ObjectId;
++  isPublic: boolean;
+ }
+ 
+ const deckSchema: Schema = new Schema({
+   name: { type: String, required: true },
+   description: { type: String, required: true },
+-  cards: [{ type: mongoose.Schema.Types.ObjectId, ref: "Card" }],
+-  user: { type: mongoose.Schema.Types.ObjectId, ref: "User" }, // om det inte redan finns
+-  isPublic: { type: Boolean, default: false }, // 👈 ny flagga
++  cards: [{ type: Schema.Types.Mixed }], // 💡 Sparar hela kortobjektet direkt
++  user: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
++  isPublic: { type: Boolean, default: false },
  });
  
--interface User {
--  id: string;
--  name: string;
--  email: string;
--  // Add other fields as needed
--}
--
- passport.deserializeUser(async (id: string, done) => {
--  console.log("🔍 deserializeUser called with ID:", id);
-+  console.log("🔓 deserializeUser: looking for user with ID:", id);
-   try {
--    console.log("🔍 Attempting to find user in database with ID:", id);
--    const user = await User.findById(id); // Retrieve the user by _id from the database
-+    const user = await User.findById(id);
-     if (!user) {
--      console.warn("⚠️ No user found with ID:", id);
--      return done(null, false); // No user found
-+      console.warn("⚠️ No user found during deserializeUser.");
-+      return done(null, false);
-     }
--    console.log("✅ User found:", user);
--    done(null, user); // Pass the full user object to the session
-+    console.log("✅ User deserialized:", user);
-+    done(null, user);
-   } catch (error) {
-     console.error("❌ Error in deserializeUser:", error);
-     done(error, null);
+ export default mongoose.model<IDeck>("Deck", deckSchema);
 diff --git a/changes.diff b/changes.diff
-index 9456347..e69de29 100644
+index 32aad70..ae58a04 100644
 --- a/changes.diff
 +++ b/changes.diff
-@@ -1,805 +0,0 @@
--diff --git a/backend/src/controllers/deckController.ts b/backend/src/controllers/deckController.ts
--index 8382694..7cce2d5 100644
----- a/backend/src/controllers/deckController.ts
--+++ b/backend/src/controllers/deckController.ts
--@@ -12,6 +12,14 @@ declare global {
--   }
-- }
+@@ -1,907 +0,0 @@
+-diff --git a/backend/src/app.ts b/backend/src/app.ts
+-index c5ef0f9..13cf304 100644
+---- a/backend/src/app.ts
+-+++ b/backend/src/app.ts
+-@@ -22,6 +22,7 @@ const allowedOrigins = ["http://localhost:4200", "https://jhelgodt.github.io"];
 - 
--+export const getPublicDecks: RequestHandler = async (req, res) => {
--+  try {
--+    const publicDecks = await Deck.find({ isPublic: true }).populate("cards");
--+    res.json(publicDecks);
--+  } catch (err) {
--+    res.status(500).json({ error: "Failed to fetch public decks" });
--+  }
--+};
-- // 🔁 Lägg till ett kort i en deck
-- export const addCardToDeck: RequestHandler = async (req, res) => {
--   try {
--diff --git a/backend/src/models/deckModel.ts b/backend/src/models/deckModel.ts
--index 9ecb92e..c025a31 100644
----- a/backend/src/models/deckModel.ts
--+++ b/backend/src/models/deckModel.ts
--@@ -5,13 +5,15 @@ export interface IDeck extends Document {
--   description: string;
--   cards: mongoose.Types.ObjectId[]; // Array of Card IDs
--   user: mongoose.Types.ObjectId; // Nytt fält för att koppla till användare
--+  isPublic: boolean; // Nytt fält för att ange om decket är offentligt
-- }
+- // ✅ Middleware: JSON parsing
+- app.use(express.json());
+-+app.set("trust proxy", 1); // Trust the first proxy
 - 
-- const deckSchema: Schema = new Schema({
--   name: { type: String, required: true },
--   description: { type: String, required: true },
--   cards: [{ type: mongoose.Schema.Types.ObjectId, ref: "Card" }],
---  user: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true }, // Nytt fält
--+  user: { type: mongoose.Schema.Types.ObjectId, ref: "User" }, // om det inte redan finns
--+  isPublic: { type: Boolean, default: false }, // 👈 ny flagga
+- // ✅ Session config (must come before passport.session)
+- app.use(
+-diff --git a/backend/src/config/passport.ts b/backend/src/config/passport.ts
+-index 831fec8..99d03e4 100644
+---- a/backend/src/config/passport.ts
+-+++ b/backend/src/config/passport.ts
+-@@ -1,23 +1,28 @@
+- import passport from "passport";
+- import { Strategy as GoogleStrategy } from "passport-google-oauth20";
+--import User, { IUser } from "../models/userModel"; // Importera din user-model
+-+import User from "../models/userModel"; // Din user-model
+- 
+--const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID!;
+--const GOOGLE_CLIENT_SECRET = process.env.GOOGLE_CLIENT_SECRET!;
+-+const { GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, GOOGLE_CALLBACK_URL } =
+-+  process.env;
+-+
+-+if (!GOOGLE_CLIENT_ID || !GOOGLE_CLIENT_SECRET || !GOOGLE_CALLBACK_URL) {
+-+  throw new Error("❌ Missing Google OAuth environment variables.");
+-+}
+-+
+-+console.log("✅ GOOGLE_CALLBACK_URL loaded:", GOOGLE_CALLBACK_URL);
+- 
+- passport.use(
+-   new GoogleStrategy(
+-     {
+-       clientID: GOOGLE_CLIENT_ID,
+-       clientSecret: GOOGLE_CLIENT_SECRET,
+--      callbackURL: "/auth/google/callback",
+-+      callbackURL: GOOGLE_CALLBACK_URL,
+-     },
+-     async (accessToken, refreshToken, profile, done) => {
+-       try {
+--        console.log("🔁 Google profile:", profile);
+-+        console.log("🔁 Received Google profile:", profile);
+- 
+-         const existingUser = await User.findOne({ googleId: profile.id });
+--        console.log("Checking for existing user...");
+-         if (existingUser) {
+-           console.log("✅ Found existing user:", existingUser);
+-           return done(null, existingUser);
+-@@ -32,7 +37,7 @@ passport.use(
+-         console.log("🆕 Created new user:", newUser);
+-         return done(null, newUser);
+-       } catch (error) {
+--        console.error("❌ Error in Google strategy:", error);
+-+        console.error("❌ Error in Google OAuth strategy:", error);
+-         return done(error, undefined);
+-       }
+-     }
+-@@ -40,28 +45,20 @@ passport.use(
+- );
+- 
+- passport.serializeUser((user: any, done) => {
+--  console.log("🔍 serializeUser called with user:", user);
+--  done(null, user._id); // ✅ Save only _id in session
+-+  console.log("🔐 serializeUser:", user);
+-+  done(null, user._id);
 - });
 - 
-- export default mongoose.model<IDeck>("Deck", deckSchema);
--diff --git a/backend/src/routes/deckRoutes.ts b/backend/src/routes/deckRoutes.ts
--index 298a97e..25ffe5c 100644
----- a/backend/src/routes/deckRoutes.ts
--+++ b/backend/src/routes/deckRoutes.ts
--@@ -6,10 +6,12 @@ import {
--   deleteDeck,
--   updateDeck,
--   addCardToDeck,
--+  getPublicDecks,
-- } from "../controllers/deckController";
-- 
-- const router = express.Router();
-- 
--+router.get("/public", getPublicDecks); // 👈 detta är tillgängligt utan inloggning
-- router.get("/", getAllDecks);
-- router.get("/:id", getDeckById);
-- router.post("/", createDeck);
+--interface User {
+--  id: string;
+--  name: string;
+--  email: string;
+--  // Add other fields as needed
+--}
+--
+- passport.deserializeUser(async (id: string, done) => {
+--  console.log("🔍 deserializeUser called with ID:", id);
+-+  console.log("🔓 deserializeUser: looking for user with ID:", id);
+-   try {
+--    console.log("🔍 Attempting to find user in database with ID:", id);
+--    const user = await User.findById(id); // Retrieve the user by _id from the database
+-+    const user = await User.findById(id);
+-     if (!user) {
+--      console.warn("⚠️ No user found with ID:", id);
+--      return done(null, false); // No user found
+-+      console.warn("⚠️ No user found during deserializeUser.");
+-+      return done(null, false);
+-     }
+--    console.log("✅ User found:", user);
+--    done(null, user); // Pass the full user object to the session
+-+    console.log("✅ User deserialized:", user);
+-+    done(null, user);
+-   } catch (error) {
+-     console.error("❌ Error in deserializeUser:", error);
+-     done(error, null);
 -diff --git a/changes.diff b/changes.diff
--index bad506e..e69de29 100644
+-index 9456347..e69de29 100644
 ---- a/changes.diff
 -+++ b/changes.diff
--@@ -1,481 +0,0 @@
---diff --git a/backend/src/app.ts b/backend/src/app.ts
---index 682e988..c5ef0f9 100644
------ a/backend/src/app.ts
---+++ b/backend/src/app.ts
---@@ -1,37 +1,62 @@
----import express from "express";
---+import express, { Request, Response, NextFunction } from "express";
--- import cors from "cors";
--- import mongoose from "mongoose";
---+import session from "express-session";
---+import MongoStore from "connect-mongo";
---+import passport from "passport";
---+import "./config/passport"; // Import Passport strategy
---+
--- import cardRoutes from "./routes/cardRoutes";
--- import deckRoutes from "./routes/deckRoutes";
--- import authRoutes from "./routes/authRoutes";
----import passport from "passport";
----import "./config/passport"; // Import the Passport configuration
----import session from "express-session";
----import MongoStore from "connect-mongo";
--- 
----const app = express();
---+// Extend session object
---+declare module "express-session" {
---+  interface Session {
---+    passport?: { user?: string };
---+  }
---+}
--- 
---+const app = express();
--- const allowedOrigins = ["http://localhost:4200", "https://jhelgodt.github.io"];
--- 
---+// ✅ Middleware: JSON parsing
---+app.use(express.json());
---+
---+// ✅ Session config (must come before passport.session)
--- app.use(
---   session({
----    secret: process.env.SESSION_SECRET || "your_secret_key", // Use a secure secret in production
---+    secret: process.env.SESSION_SECRET || "your_secret_key",
---     resave: false,
---     saveUninitialized: false,
---     store: MongoStore.create({
----      mongoUrl: process.env.MONGO_URI, // Use your MongoDB connection string
----      collectionName: "sessions", // Optional: specify the collection name for sessions
---+      mongoUrl: process.env.MONGO_URI,
---+      collectionName: "sessions",
---     }),
---     cookie: {
----      maxAge: 24 * 60 * 60 * 1000, // 1 day session timeout (in milliseconds)
----      secure: process.env.NODE_ENV === "production", // Use secure cookies in production (requires HTTPS)
----      httpOnly: true, // Prevent client-side JavaScript from accessing the cookie
---+      maxAge: 24 * 60 * 60 * 1000,
---+      secure: process.env.NODE_ENV === "production",
---+      httpOnly: true,
---     },
---   })
--- );
---+
---+// ✅ Passport middleware
--- app.use(passport.initialize());
--- app.use(passport.session());
----app.use("/auth", authRoutes);
---+
---+// ✅ Logging middleware (for debugging sessions)
---+let count = 0;
---+const showLogs = (req: Request, res: Response, next: NextFunction) => {
---+  count++;
---+  console.log(`count: ${count}`);
---+  console.log("req.session.passport:", req.session.passport);
---+  console.log("req.user:", req.user);
---+  next();
---+};
---+app.use(showLogs);
---+
---+// ✅ CORS config
--- app.use(
---   cors({
---     origin: (origin, callback) => {
---@@ -45,31 +70,34 @@ app.use(
---     credentials: true,
---   })
--- );
----app.use(express.json());
--- 
----// Routes
----app.use("/api/v1/cards", cardRoutes); // Add card routes
----app.use("/api/v1/decks", deckRoutes); // Add deck routes
---+// ✅ Routes
---+app.use("/auth", authRoutes);
---+app.use("/api/v1/cards", cardRoutes);
---+app.use("/api/v1/decks", deckRoutes);
--- 
----// Test route
---+// ✅ Test routes
--- app.get("/", (req, res) => {
---   res.send("API is running!");
--- });
---+
--- app.get("/auth/user", (req, res) => {
---   if (req.isAuthenticated()) {
----    res.json(req.user); // Returns the logged-in user's profile
---+    res.json(req.user);
---   } else {
---     res.status(401).json({ error: "Not authenticated" });
---   }
--- });
--- 
----export default app;
--- app.get("/me", (req, res) => {
---   console.log("🔎 Session user:", req.user);
---   res.json(req.user || { message: "Not logged in" });
--- });
----// MongoDB connection
---+
---+// ✅ Connect to MongoDB
--- mongoose
---   .connect(process.env.MONGO_URI as string)
---   .then(() => console.log("Connected to MongoDB"))
---   .catch((err) => console.error("MongoDB connection error:", err));
---+
---+export default app;
---diff --git a/backend/src/config/passport.ts b/backend/src/config/passport.ts
---index 7455edd..831fec8 100644
------ a/backend/src/config/passport.ts
---+++ b/backend/src/config/passport.ts
---@@ -40,7 +40,8 @@ passport.use(
--- );
--- 
--- passport.serializeUser((user: any, done) => {
----  done(null, user._id); // ✅ spara bara _id i session
---+  console.log("🔍 serializeUser called with user:", user);
---+  done(null, user._id); // ✅ Save only _id in session
--- });
--- 
--- interface User {
---@@ -50,6 +51,19 @@ interface User {
---   // Add other fields as needed
--- }
--- 
----passport.deserializeUser((obj: User | null, done) => {
----  done(null, obj);
---+passport.deserializeUser(async (id: string, done) => {
---+  console.log("🔍 deserializeUser called with ID:", id);
---+  try {
---+    console.log("🔍 Attempting to find user in database with ID:", id);
---+    const user = await User.findById(id); // Retrieve the user by _id from the database
---+    if (!user) {
---+      console.warn("⚠️ No user found with ID:", id);
---+      return done(null, false); // No user found
---+    }
---+    console.log("✅ User found:", user);
---+    done(null, user); // Pass the full user object to the session
---+  } catch (error) {
---+    console.error("❌ Error in deserializeUser:", error);
---+    done(error, null);
---+  }
--- });
+-@@ -1,805 +0,0 @@
 --diff --git a/backend/src/controllers/deckController.ts b/backend/src/controllers/deckController.ts
---index a5b53ff..8382694 100644
+--index 8382694..7cce2d5 100644
 ----- a/backend/src/controllers/deckController.ts
 --+++ b/backend/src/controllers/deckController.ts
---@@ -1,7 +1,19 @@
----import { Request, Response } from "express";
---+import { Request, Response, RequestHandler } from "express";
--- import Deck from "../models/deckModel";
---+import { IUser } from "../models/userModel";
+--@@ -12,6 +12,14 @@ declare global {
+--   }
+-- }
 -- 
----export const addCardToDeck = async (req: Request, res: Response) => {
---+// 👇 Utökar Express-typerna så TypeScript vet att req.user existerar
---+declare global {
---+  namespace Express {
---+    interface User extends IUser {}
---+    interface Request {
---+      user?: IUser;
---+    }
+--+export const getPublicDecks: RequestHandler = async (req, res) => {
+--+  try {
+--+    const publicDecks = await Deck.find({ isPublic: true }).populate("cards");
+--+    res.json(publicDecks);
+--+  } catch (err) {
+--+    res.status(500).json({ error: "Failed to fetch public decks" });
 --+  }
---+}
---+
---+// 🔁 Lägg till ett kort i en deck
---+export const addCardToDeck: RequestHandler = async (req, res) => {
+--+};
+-- // 🔁 Lägg till ett kort i en deck
+-- export const addCardToDeck: RequestHandler = async (req, res) => {
 --   try {
---     const { cardId } = req.body;
---     const deck = await Deck.findByIdAndUpdate(
---@@ -9,73 +21,98 @@ export const addCardToDeck = async (req: Request, res: Response) => {
---       { $push: { cards: cardId } },
---       { new: true }
---     ).populate("cards");
---+
---     if (!deck) {
---       res.status(404).json({ error: "Deck not found" });
---       return;
---     }
---+
---     res.json(deck);
---+    return;
---   } catch (err) {
---     res.status(400).json({ error: "Failed to add card to deck" });
---+    return;
---   }
--- };
----// GET all decks
----export const getAllDecks = async (req: Request, res: Response) => {
---+
---+// 📄 Hämta alla decks för den inloggade användaren
---+export const getAllDecks: RequestHandler = async (req, res) => {
---+  if (!req.user) {
---+    res.status(401).json({ error: "Not authenticated" });
---+    return;
---+  }
---+
---   try {
----    const decks = await Deck.find().populate("cards"); // Populate card details
---+    const decks = await Deck.find({ user: req.user._id }).populate("cards");
---     res.json(decks);
---   } catch (err) {
----    res.status(500).json({ error: "Failed to fetch decks" });
---+    res.status(500).json({ error: "Failed to fetch your decks" });
---   }
--- };
+--diff --git a/backend/src/models/deckModel.ts b/backend/src/models/deckModel.ts
+--index 9ecb92e..c025a31 100644
+----- a/backend/src/models/deckModel.ts
+--+++ b/backend/src/models/deckModel.ts
+--@@ -5,13 +5,15 @@ export interface IDeck extends Document {
+--   description: string;
+--   cards: mongoose.Types.ObjectId[]; // Array of Card IDs
+--   user: mongoose.Types.ObjectId; // Nytt fält för att koppla till användare
+--+  isPublic: boolean; // Nytt fält för att ange om decket är offentligt
+-- }
 -- 
----// GET a deck by ID
----export const getDeckById = async (req: Request, res: Response) => {
---+// 📄 Hämta en enskild deck
---+export const getDeckById: RequestHandler = async (req, res) => {
---   try {
---     const deck = await Deck.findById(req.params.id).populate("cards");
---+
---     if (!deck) {
---       res.status(404).json({ error: "Deck not found" });
---       return;
---     }
---+
---     res.json(deck);
---   } catch (err) {
---     res.status(500).json({ error: "Failed to fetch deck" });
---   }
--- };
+-- const deckSchema: Schema = new Schema({
+--   name: { type: String, required: true },
+--   description: { type: String, required: true },
+--   cards: [{ type: mongoose.Schema.Types.ObjectId, ref: "Card" }],
+---  user: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true }, // Nytt fält
+--+  user: { type: mongoose.Schema.Types.ObjectId, ref: "User" }, // om det inte redan finns
+--+  isPublic: { type: Boolean, default: false }, // 👈 ny flagga
+-- });
 -- 
----// POST – create a new deck
----export const createDeck = async (req: Request, res: Response) => {
---+// ➕ Skapa ny deck kopplad till användare
---+export const createDeck: RequestHandler = async (req, res) => {
---+  if (!req.user) {
---+    res.status(401).json({ error: "Not authenticated" });
---+    return;
---+  }
---+
---   try {
----    const newDeck = await Deck.create(req.body);
---+    const newDeck = await Deck.create({
---+      ...req.body,
---+      user: req.user._id,
---+    });
---+
---     res.status(201).json(newDeck);
---   } catch (err) {
---     res.status(400).json({ error: "Failed to create deck" });
---   }
--- };
--- 
----// DELETE a deck
----export const deleteDeck = async (req: Request, res: Response) => {
---+// ❌ Ta bort deck
---+export const deleteDeck: RequestHandler = async (req, res) => {
---   try {
---     const deletedDeck = await Deck.findByIdAndDelete(req.params.id);
---+
---     if (!deletedDeck) {
---       res.status(404).json({ error: "Deck not found" });
---       return;
---     }
---+
---     res.json({ message: "Deck deleted" });
---   } catch (err) {
---     res.status(500).json({ error: "Failed to delete deck" });
---   }
--- };
--- 
----// PUT – update a deck
----export const updateDeck = async (req: Request, res: Response) => {
---+// ✏️ Uppdatera deck
---+export const updateDeck: RequestHandler = async (req, res) => {
---   try {
---     const updatedDeck = await Deck.findByIdAndUpdate(req.params.id, req.body, {
---       new: true,
---     });
---+
---     if (!updatedDeck) {
---       res.status(404).json({ error: "Deck not found" });
---       return;
---     }
---+
---     res.json(updatedDeck);
---   } catch (err) {
---     res.status(400).json({ error: "Failed to update deck" });
---diff --git a/backend/src/routes/authRoutes.ts b/backend/src/routes/authRoutes.ts
---index b148ac5..8621ef6 100644
------ a/backend/src/routes/authRoutes.ts
---+++ b/backend/src/routes/authRoutes.ts
---@@ -1,4 +1,4 @@
----import express from "express";
---+import express, { NextFunction, Request, Response } from "express";
--- import passport from "passport";
+-- export default mongoose.model<IDeck>("Deck", deckSchema);
+--diff --git a/backend/src/routes/deckRoutes.ts b/backend/src/routes/deckRoutes.ts
+--index 298a97e..25ffe5c 100644
+----- a/backend/src/routes/deckRoutes.ts
+--+++ b/backend/src/routes/deckRoutes.ts
+--@@ -6,10 +6,12 @@ import {
+--   deleteDeck,
+--   updateDeck,
+--   addCardToDeck,
+--+  getPublicDecks,
+-- } from "../controllers/deckController";
 -- 
 -- const router = express.Router();
---@@ -10,12 +10,20 @@ const frontendUrl = isProduction
--- // Start Google OAuth login
--- router.get(
---   "/google",
---+  (req: Request, res: Response, next: NextFunction) => {
---+    console.log("Starting Google OAuth login...");
---+    next();
---+  },
---   passport.authenticate("google", { scope: ["profile", "email"] })
--- );
 -- 
--- // Handle Google OAuth callback
--- router.get(
---   "/google/callback",
---+  (req: Request, res: Response, next: NextFunction) => {
---+    console.log("Handling Google OAuth callback...");
---+    next();
---+  },
---   passport.authenticate("google", { failureRedirect: "/" }),
---   (req, res) => {
---     res.redirect(`${frontendUrl}`); //
+--+router.get("/public", getPublicDecks); // 👈 detta är tillgängligt utan inloggning
+-- router.get("/", getAllDecks);
+-- router.get("/:id", getDeckById);
+-- router.post("/", createDeck);
 --diff --git a/changes.diff b/changes.diff
---index 610c609..82709e9 100644
+--index bad506e..e69de29 100644
 ----- a/changes.diff
 --+++ b/changes.diff
---@@ -1,73 +0,0 @@
+--@@ -1,481 +0,0 @@
 ---diff --git a/backend/src/app.ts b/backend/src/app.ts
----index 85b0756..682e988 100644
+---index 682e988..c5ef0f9 100644
 ------ a/backend/src/app.ts
 ---+++ b/backend/src/app.ts
----@@ -63,10 +63,13 @@ app.get("/auth/user", (req, res) => {
+---@@ -1,37 +1,62 @@
+----import express from "express";
+---+import express, { Request, Response, NextFunction } from "express";
+--- import cors from "cors";
+--- import mongoose from "mongoose";
+---+import session from "express-session";
+---+import MongoStore from "connect-mongo";
+---+import passport from "passport";
+---+import "./config/passport"; // Import Passport strategy
+---+
+--- import cardRoutes from "./routes/cardRoutes";
+--- import deckRoutes from "./routes/deckRoutes";
+--- import authRoutes from "./routes/authRoutes";
+----import passport from "passport";
+----import "./config/passport"; // Import the Passport configuration
+----import session from "express-session";
+----import MongoStore from "connect-mongo";
+--- 
+----const app = express();
+---+// Extend session object
+---+declare module "express-session" {
+---+  interface Session {
+---+    passport?: { user?: string };
+---+  }
+---+}
+--- 
+---+const app = express();
+--- const allowedOrigins = ["http://localhost:4200", "https://jhelgodt.github.io"];
+--- 
+---+// ✅ Middleware: JSON parsing
+---+app.use(express.json());
+---+
+---+// ✅ Session config (must come before passport.session)
+--- app.use(
+---   session({
+----    secret: process.env.SESSION_SECRET || "your_secret_key", // Use a secure secret in production
+---+    secret: process.env.SESSION_SECRET || "your_secret_key",
+---     resave: false,
+---     saveUninitialized: false,
+---     store: MongoStore.create({
+----      mongoUrl: process.env.MONGO_URI, // Use your MongoDB connection string
+----      collectionName: "sessions", // Optional: specify the collection name for sessions
+---+      mongoUrl: process.env.MONGO_URI,
+---+      collectionName: "sessions",
+---     }),
+---     cookie: {
+----      maxAge: 24 * 60 * 60 * 1000, // 1 day session timeout (in milliseconds)
+----      secure: process.env.NODE_ENV === "production", // Use secure cookies in production (requires HTTPS)
+----      httpOnly: true, // Prevent client-side JavaScript from accessing the cookie
+---+      maxAge: 24 * 60 * 60 * 1000,
+---+      secure: process.env.NODE_ENV === "production",
+---+      httpOnly: true,
+---     },
+---   })
+--- );
+---+
+---+// ✅ Passport middleware
+--- app.use(passport.initialize());
+--- app.use(passport.session());
+----app.use("/auth", authRoutes);
+---+
+---+// ✅ Logging middleware (for debugging sessions)
+---+let count = 0;
+---+const showLogs = (req: Request, res: Response, next: NextFunction) => {
+---+  count++;
+---+  console.log(`count: ${count}`);
+---+  console.log("req.session.passport:", req.session.passport);
+---+  console.log("req.user:", req.user);
+---+  next();
+---+};
+---+app.use(showLogs);
+---+
+---+// ✅ CORS config
+--- app.use(
+---   cors({
+---     origin: (origin, callback) => {
+---@@ -45,31 +70,34 @@ app.use(
+---     credentials: true,
+---   })
+--- );
+----app.use(express.json());
+--- 
+----// Routes
+----app.use("/api/v1/cards", cardRoutes); // Add card routes
+----app.use("/api/v1/decks", deckRoutes); // Add deck routes
+---+// ✅ Routes
+---+app.use("/auth", authRoutes);
+---+app.use("/api/v1/cards", cardRoutes);
+---+app.use("/api/v1/decks", deckRoutes);
+--- 
+----// Test route
+---+// ✅ Test routes
+--- app.get("/", (req, res) => {
+---   res.send("API is running!");
+--- });
+---+
+--- app.get("/auth/user", (req, res) => {
+---   if (req.isAuthenticated()) {
+----    res.json(req.user); // Returns the logged-in user's profile
+---+    res.json(req.user);
+---   } else {
+---     res.status(401).json({ error: "Not authenticated" });
 ---   }
 --- });
 --- 
----+export default app;
----+app.get("/me", (req, res) => {
----+  console.log("🔎 Session user:", req.user);
----+  res.json(req.user || { message: "Not logged in" });
----+});
---- // MongoDB connection
+----export default app;
+--- app.get("/me", (req, res) => {
+---   console.log("🔎 Session user:", req.user);
+---   res.json(req.user || { message: "Not logged in" });
+--- });
+----// MongoDB connection
+---+
+---+// ✅ Connect to MongoDB
 --- mongoose
 ---   .connect(process.env.MONGO_URI as string)
 ---   .then(() => console.log("Connected to MongoDB"))
 ---   .catch((err) => console.error("MongoDB connection error:", err));
-----
-----export default app;
+---+
+---+export default app;
 ---diff --git a/backend/src/config/passport.ts b/backend/src/config/passport.ts
----index 82c9c60..7455edd 100644
+---index 7455edd..831fec8 100644
 ------ a/backend/src/config/passport.ts
 ---+++ b/backend/src/config/passport.ts
----@@ -1,5 +1,6 @@
---- import passport from "passport";
---- import { Strategy as GoogleStrategy } from "passport-google-oauth20";
----+import User, { IUser } from "../models/userModel"; // Importera din user-model
---- 
---- const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID!;
---- const GOOGLE_CLIENT_SECRET = process.env.GOOGLE_CLIENT_SECRET!;
----@@ -11,16 +12,35 @@ passport.use(
----       clientSecret: GOOGLE_CLIENT_SECRET,
----       callbackURL: "/auth/google/callback",
----     },
-----    (accessToken, refreshToken, profile, done) => {
-----      // Here, you can save the user to your database
-----      // For now, we'll just return the profile
-----      return done(null, profile);
----+    async (accessToken, refreshToken, profile, done) => {
----+      try {
----+        console.log("🔁 Google profile:", profile);
----+
----+        const existingUser = await User.findOne({ googleId: profile.id });
----+        console.log("Checking for existing user...");
----+        if (existingUser) {
----+          console.log("✅ Found existing user:", existingUser);
----+          return done(null, existingUser);
----+        }
----+
----+        const newUser = await User.create({
----+          googleId: profile.id,
----+          name: profile.displayName,
----+          email: profile.emails?.[0]?.value || "",
----+        });
----+
----+        console.log("🆕 Created new user:", newUser);
----+        return done(null, newUser);
----+      } catch (error) {
----+        console.error("❌ Error in Google strategy:", error);
----+        return done(error, undefined);
----+      }
----     }
----   )
+---@@ -40,7 +40,8 @@ passport.use(
 --- );
 --- 
-----passport.serializeUser((user, done) => {
-----  done(null, user);
----+passport.serializeUser((user: any, done) => {
----+  done(null, user._id); // ✅ spara bara _id i session
+--- passport.serializeUser((user: any, done) => {
+----  done(null, user._id); // ✅ spara bara _id i session
+---+  console.log("🔍 serializeUser called with user:", user);
+---+  done(null, user._id); // ✅ Save only _id in session
 --- });
 --- 
 --- interface User {
---diff --git a/frontend/src/app/services/deck.service.ts b/frontend/src/app/services/deck.service.ts
---index eaa53b1..a1bbf79 100644
------ a/frontend/src/app/services/deck.service.ts
---+++ b/frontend/src/app/services/deck.service.ts
---@@ -8,40 +8,53 @@ import { Observable } from "rxjs";
--- export class DeckService {
---   private API_URL: string;
+---@@ -50,6 +51,19 @@ interface User {
+---   // Add other fields as needed
+--- }
+--- 
+----passport.deserializeUser((obj: User | null, done) => {
+----  done(null, obj);
+---+passport.deserializeUser(async (id: string, done) => {
+---+  console.log("🔍 deserializeUser called with ID:", id);
+---+  try {
+---+    console.log("🔍 Attempting to find user in database with ID:", id);
+---+    const user = await User.findById(id); // Retrieve the user by _id from the database
+---+    if (!user) {
+---+      console.warn("⚠️ No user found with ID:", id);
+---+      return done(null, false); // No user found
+---+    }
+---+    console.log("✅ User found:", user);
+---+    done(null, user); // Pass the full user object to the session
+---+  } catch (error) {
+---+    console.error("❌ Error in deserializeUser:", error);
+---+    done(error, null);
+---+  }
+--- });
+---diff --git a/backend/src/controllers/deckController.ts b/backend/src/controllers/deckController.ts
+---index a5b53ff..8382694 100644
+------ a/backend/src/controllers/deckController.ts
+---+++ b/backend/src/controllers/deckController.ts
+---@@ -1,7 +1,19 @@
+----import { Request, Response } from "express";
+---+import { Request, Response, RequestHandler } from "express";
+--- import Deck from "../models/deckModel";
+---+import { IUser } from "../models/userModel";
+--- 
+----export const addCardToDeck = async (req: Request, res: Response) => {
+---+// 👇 Utökar Express-typerna så TypeScript vet att req.user existerar
+---+declare global {
+---+  namespace Express {
+---+    interface User extends IUser {}
+---+    interface Request {
+---+      user?: IUser;
+---+    }
+---+  }
+---+}
+---+
+---+// 🔁 Lägg till ett kort i en deck
+---+export const addCardToDeck: RequestHandler = async (req, res) => {
+---   try {
+---     const { cardId } = req.body;
+---     const deck = await Deck.findByIdAndUpdate(
+---@@ -9,73 +21,98 @@ export const addCardToDeck = async (req: Request, res: Response) => {
+---       { $push: { cards: cardId } },
+---       { new: true }
+---     ).populate("cards");
+---+
+---     if (!deck) {
+---       res.status(404).json({ error: "Deck not found" });
+---       return;
+---     }
+---+
+---     res.json(deck);
+---+    return;
+---   } catch (err) {
+---     res.status(400).json({ error: "Failed to add card to deck" });
+---+    return;
+---   }
+--- };
+----// GET all decks
+----export const getAllDecks = async (req: Request, res: Response) => {
+---+
+---+// 📄 Hämta alla decks för den inloggade användaren
+---+export const getAllDecks: RequestHandler = async (req, res) => {
+---+  if (!req.user) {
+---+    res.status(401).json({ error: "Not authenticated" });
+---+    return;
+---+  }
+---+
+---   try {
+----    const decks = await Deck.find().populate("cards"); // Populate card details
+---+    const decks = await Deck.find({ user: req.user._id }).populate("cards");
+---     res.json(decks);
+---   } catch (err) {
+----    res.status(500).json({ error: "Failed to fetch decks" });
+---+    res.status(500).json({ error: "Failed to fetch your decks" });
+---   }
+--- };
+--- 
+----// GET a deck by ID
+----export const getDeckById = async (req: Request, res: Response) => {
+---+// 📄 Hämta en enskild deck
+---+export const getDeckById: RequestHandler = async (req, res) => {
+---   try {
+---     const deck = await Deck.findById(req.params.id).populate("cards");
+---+
+---     if (!deck) {
+---       res.status(404).json({ error: "Deck not found" });
+---       return;
+---     }
+---+
+---     res.json(deck);
+---   } catch (err) {
+---     res.status(500).json({ error: "Failed to fetch deck" });
+---   }
+--- };
+--- 
+----// POST – create a new deck
+----export const createDeck = async (req: Request, res: Response) => {
+---+// ➕ Skapa ny deck kopplad till användare
+---+export const createDeck: RequestHandler = async (req, res) => {
+---+  if (!req.user) {
+---+    res.status(401).json({ error: "Not authenticated" });
+---+    return;
+---+  }
+---+
+---   try {
+----    const newDeck = await Deck.create(req.body);
+---+    const newDeck = await Deck.create({
+---+      ...req.body,
+---+      user: req.user._id,
+---+    });
+---+
+---     res.status(201).json(newDeck);
+---   } catch (err) {
+---     res.status(400).json({ error: "Failed to create deck" });
+---   }
+--- };
+--- 
+----// DELETE a deck
+----export const deleteDeck = async (req: Request, res: Response) => {
+---+// ❌ Ta bort deck
+---+export const deleteDeck: RequestHandler = async (req, res) => {
+---   try {
+---     const deletedDeck = await Deck.findByIdAndDelete(req.params.id);
+---+
+---     if (!deletedDeck) {
+---       res.status(404).json({ error: "Deck not found" });
+---       return;
+---     }
+---+
+---     res.json({ message: "Deck deleted" });
+---   } catch (err) {
+---     res.status(500).json({ error: "Failed to delete deck" });
+---   }
+--- };
+--- 
+----// PUT – update a deck
+----export const updateDeck = async (req: Request, res: Response) => {
+---+// ✏️ Uppdatera deck
+---+export const updateDeck: RequestHandler = async (req, res) => {
+---   try {
+---     const updatedDeck = await Deck.findByIdAndUpdate(req.params.id, req.body, {
+---       new: true,
+---     });
+---+
+---     if (!updatedDeck) {
+---       res.status(404).json({ error: "Deck not found" });
+---       return;
+---     }
+---+
+---     res.json(updatedDeck);
+---   } catch (err) {
+---     res.status(400).json({ error: "Failed to update deck" });
+---diff --git a/backend/src/routes/authRoutes.ts b/backend/src/routes/authRoutes.ts
+---index b148ac5..8621ef6 100644
+------ a/backend/src/routes/authRoutes.ts
+---+++ b/backend/src/routes/authRoutes.ts
+---@@ -1,4 +1,4 @@
+----import express from "express";
+---+import express, { NextFunction, Request, Response } from "express";
+--- import passport from "passport";
+--- 
+--- const router = express.Router();
+---@@ -10,12 +10,20 @@ const frontendUrl = isProduction
+--- // Start Google OAuth login
+--- router.get(
+---   "/google",
+---+  (req: Request, res: Response, next: NextFunction) => {
+---+    console.log("Starting Google OAuth login...");
+---+    next();
+---+  },
+---   passport.authenticate("google", { scope: ["profile", "email"] })
+--- );
+--- 
+--- // Handle Google OAuth callback
+--- router.get(
+---   "/google/callback",
+---+  (req: Request, res: Response, next: NextFunction) => {
+---+    console.log("Handling Google OAuth callback...");
+---+    next();
+---+  },
+---   passport.authenticate("google", { failureRedirect: "/" }),
+---   (req, res) => {
+---     res.redirect(`${frontendUrl}`); //
+---diff --git a/changes.diff b/changes.diff
+---index 610c609..82709e9 100644
+------ a/changes.diff
+---+++ b/changes.diff
+---@@ -1,73 +0,0 @@
+----diff --git a/backend/src/app.ts b/backend/src/app.ts
+----index 85b0756..682e988 100644
+------- a/backend/src/app.ts
+----+++ b/backend/src/app.ts
+----@@ -63,10 +63,13 @@ app.get("/auth/user", (req, res) => {
+----   }
+---- });
+---- 
+----+export default app;
+----+app.get("/me", (req, res) => {
+----+  console.log("🔎 Session user:", req.user);
+----+  res.json(req.user || { message: "Not logged in" });
+----+});
+---- // MongoDB connection
+---- mongoose
+----   .connect(process.env.MONGO_URI as string)
+----   .then(() => console.log("Connected to MongoDB"))
+----   .catch((err) => console.error("MongoDB connection error:", err));
+-----
+-----export default app;
+----diff --git a/backend/src/config/passport.ts b/backend/src/config/passport.ts
+----index 82c9c60..7455edd 100644
+------- a/backend/src/config/passport.ts
+----+++ b/backend/src/config/passport.ts
+----@@ -1,5 +1,6 @@
+---- import passport from "passport";
+---- import { Strategy as GoogleStrategy } from "passport-google-oauth20";
+----+import User, { IUser } from "../models/userModel"; // Importera din user-model
+---- 
+---- const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID!;
+---- const GOOGLE_CLIENT_SECRET = process.env.GOOGLE_CLIENT_SECRET!;
+----@@ -11,16 +12,35 @@ passport.use(
+----       clientSecret: GOOGLE_CLIENT_SECRET,
+----       callbackURL: "/auth/google/callback",
+----     },
+-----    (accessToken, refreshToken, profile, done) => {
+-----      // Here, you can save the user to your database
+-----      // For now, we'll just return the profile
+-----      return done(null, profile);
+----+    async (accessToken, refreshToken, profile, done) => {
+----+      try {
+----+        console.log("🔁 Google profile:", profile);
+----+
+----+        const existingUser = await User.findOne({ googleId: profile.id });
+----+        console.log("Checking for existing user...");
+----+        if (existingUser) {
+----+          console.log("✅ Found existing user:", existingUser);
+----+          return done(null, existingUser);
+----+        }
+----+
+----+        const newUser = await User.create({
+----+          googleId: profile.id,
+----+          name: profile.displayName,
+----+          email: profile.emails?.[0]?.value || "",
+----+        });
+----+
+----+        console.log("🆕 Created new user:", newUser);
+----+        return done(null, newUser);
+----+      } catch (error) {
+----+        console.error("❌ Error in Google strategy:", error);
+----+        return done(error, undefined);
+----+      }
+----     }
+----   )
+---- );
+---- 
+-----passport.serializeUser((user, done) => {
+-----  done(null, user);
+----+passport.serializeUser((user: any, done) => {
+----+  done(null, user._id); // ✅ spara bara _id i session
+---- });
+---- 
+---- interface User {
+---diff --git a/frontend/src/app/services/deck.service.ts b/frontend/src/app/services/deck.service.ts
+---index eaa53b1..a1bbf79 100644
+------ a/frontend/src/app/services/deck.service.ts
+---+++ b/frontend/src/app/services/deck.service.ts
+---@@ -8,40 +8,53 @@ import { Observable } from "rxjs";
+--- export class DeckService {
+---   private API_URL: string;
+--- 
+----  constructor(
+----    private http: HttpClient,
+----    @Inject("API_URL") apiUrl: string // Inject the API_URL from app.config.ts
+----  ) {
+----    this.API_URL = `${apiUrl}/api/v1`; // Add /api/v1 to the base URL
+---+  constructor(private http: HttpClient, @Inject("API_URL") apiUrl: string) {
+---+    this.API_URL = `${apiUrl}/api/v1`;
+---   }
+--- 
+----  // Fetch all decks
+---+  // Fetch all decks (auth required)
+---   getAllDecks(): Observable<any> {
+----    return this.http.get(`${this.API_URL}/decks`);
+---+    return this.http.get(`${this.API_URL}/decks`, {
+---+      withCredentials: true,
+---+    });
+---   }
+--- 
+----  // Get a deck by ID
+---+  // Get a deck by ID (auth required)
+---   getDeckById(deckId: string): Observable<any> {
+----    return this.http.get(`${this.API_URL}/decks/${deckId}`);
+---+    return this.http.get(`${this.API_URL}/decks/${deckId}`, {
+---+      withCredentials: true,
+---+    });
+---   }
+--- 
+----  // Create a new deck
+---+  // Create a new deck (auth required)
+---   createDeck(deckData: any): Observable<any> {
+----    return this.http.post(`${this.API_URL}/decks`, deckData);
+---+    return this.http.post(`${this.API_URL}/decks`, deckData, {
+---+      withCredentials: true,
+---+    });
+---   }
+--- 
+----  // Update a deck
+---+  // Update a deck (auth required)
+---   updateDeck(deckId: string, deckData: any): Observable<any> {
+----    return this.http.put(`${this.API_URL}/decks/${deckId}`, deckData);
+---+    return this.http.put(`${this.API_URL}/decks/${deckId}`, deckData, {
+---+      withCredentials: true,
+---+    });
+---   }
+--- 
+----  // Delete a deck
+---+  // Delete a deck (auth required)
+---   deleteDeck(deckId: string): Observable<any> {
+----    return this.http.delete(`${this.API_URL}/decks/${deckId}`);
+---+    return this.http.delete(`${this.API_URL}/decks/${deckId}`, {
+---+      withCredentials: true,
+---+    });
+---   }
+--- 
+----  // Add a card to a deck
+---+  // Add a card to a deck (auth required)
+---   addCardToDeck(deckId: string, cardId: string): Observable<any> {
+----    return this.http.post(`${this.API_URL}/decks/${deckId}/cards`, { cardId });
+---+    return this.http.put(
+---+      `${this.API_URL}/decks/${deckId}/add-card`,
+---+      { cardId },
+---+      {
+---+        withCredentials: true,
+---+      }
+---+    );
+---   }
+--- }
+--diff --git a/frontend/src/app/components/deck-builder/deck-builder.component.html b/frontend/src/app/components/deck-builder/deck-builder.component.html
+--index 3a08851..468c56d 100644
+----- a/frontend/src/app/components/deck-builder/deck-builder.component.html
+--+++ b/frontend/src/app/components/deck-builder/deck-builder.component.html
+--@@ -12,12 +12,23 @@
+--           placeholder="Deck Name"
+--           required
+--         />
+--+
+--         <textarea
+--           class="deck-builder__textarea"
+--           formControlName="description"
+--           placeholder="Deck Description"
+--           required
+--         ></textarea>
+--+
+--+        <label class="deck-builder__checkbox-label">
+--+          <input
+--+            type="checkbox"
+--+            formControlName="isPublic"
+--+            class="deck-builder__checkbox"
+--+          />
+--+          Make this deck public
+--+        </label>
+--+
+--         <button class="deck-builder__button" type="submit">Create Deck</button>
+--       </form>
+--     </div>
+--@@ -26,10 +37,16 @@
+--       <div *ngIf="decks.length === 0" class="deck-builder__empty">
+--         No decks available.
+--       </div>
+--+
+--       <div class="deck-card" *ngFor="let deck of decks">
+--         <div class="deck-card__info">
+---          <h2 class="deck-card__title">{{ deck.name }}</h2>
+--+          <h3 class="deck-card__title">{{ deck.name }}</h3>
+--           <p class="deck-card__details">{{ deck.description }}</p>
+--+
+--+          <div class="deck-card__meta" *ngIf="deck.isPublic">
+--+            <span class="deck-card__tag">🌍 Public Deck</span>
+--+          </div>
+--+
+--           <button class="deck-card__button" (click)="viewDeck(deck._id)">
+--             View Deck
+--           </button>
+--diff --git a/frontend/src/app/components/deck-builder/deck-builder.component.scss b/frontend/src/app/components/deck-builder/deck-builder.component.scss
+--index 9d96bc4..2965a47 100644
+----- a/frontend/src/app/components/deck-builder/deck-builder.component.scss
+--+++ b/frontend/src/app/components/deck-builder/deck-builder.component.scss
+--@@ -24,6 +24,7 @@
+--       align-items: center;
+--     }
 -- 
----  constructor(
----    private http: HttpClient,
----    @Inject("API_URL") apiUrl: string // Inject the API_URL from app.config.ts
----  ) {
----    this.API_URL = `${apiUrl}/api/v1`; // Add /api/v1 to the base URL
---+  constructor(private http: HttpClient, @Inject("API_URL") apiUrl: string) {
---+    this.API_URL = `${apiUrl}/api/v1`;
+--+    // Input och textarea från tidigare
+--     &__input,
+--     &__textarea {
+--       width: 100%;
+--@@ -37,6 +38,22 @@
+--     &__button {
+--       @include nav-link-resume;
+--     }
+--+
+--+    // Ny stil för checkbox-label: visar checkboxen och texten snyggt
+--+    &__checkbox-label {
+--+      display: flex;
+--+      align-items: center;
+--+      gap: 0.5rem;
+--+      font-size: 1rem;
+--+      color: $color-text-dark;
+--+      user-select: none;
+--+    }
+--+
+--+    // Liten stil för checkboxen
+--+    &__checkbox {
+--+      width: 1rem;
+--+      height: 1rem;
+--+    }
 --   }
 -- 
----  // Fetch all decks
---+  // Fetch all decks (auth required)
---   getAllDecks(): Observable<any> {
----    return this.http.get(`${this.API_URL}/decks`);
---+    return this.http.get(`${this.API_URL}/decks`, {
---+      withCredentials: true,
---+    });
---   }
+--   &__grid {
+--@@ -71,6 +88,22 @@
 -- 
----  // Get a deck by ID
---+  // Get a deck by ID (auth required)
---   getDeckById(deckId: string): Observable<any> {
----    return this.http.get(`${this.API_URL}/decks/${deckId}`);
---+    return this.http.get(`${this.API_URL}/decks/${deckId}`, {
---+      withCredentials: true,
---+    });
---   }
--- 
----  // Create a new deck
---+  // Create a new deck (auth required)
---   createDeck(deckData: any): Observable<any> {
----    return this.http.post(`${this.API_URL}/decks`, deckData);
---+    return this.http.post(`${this.API_URL}/decks`, deckData, {
---+      withCredentials: true,
---+    });
---   }
--- 
----  // Update a deck
---+  // Update a deck (auth required)
---   updateDeck(deckId: string, deckData: any): Observable<any> {
----    return this.http.put(`${this.API_URL}/decks/${deckId}`, deckData);
---+    return this.http.put(`${this.API_URL}/decks/${deckId}`, deckData, {
---+      withCredentials: true,
---+    });
---   }
--- 
----  // Delete a deck
---+  // Delete a deck (auth required)
---   deleteDeck(deckId: string): Observable<any> {
----    return this.http.delete(`${this.API_URL}/decks/${deckId}`);
---+    return this.http.delete(`${this.API_URL}/decks/${deckId}`, {
---+      withCredentials: true,
---+    });
---   }
--- 
----  // Add a card to a deck
---+  // Add a card to a deck (auth required)
---   addCardToDeck(deckId: string, cardId: string): Observable<any> {
----    return this.http.post(`${this.API_URL}/decks/${deckId}/cards`, { cardId });
---+    return this.http.put(
---+      `${this.API_URL}/decks/${deckId}/add-card`,
---+      { cardId },
---+      {
---+        withCredentials: true,
---+      }
---+    );
+--     &__button {
+--       @include nav-link-resume;
+--+      margin-top: 1rem;
+--+    }
+--+
+--+    // Ny meta-sektion för extra info, exempelvis public tag
+--+    &__meta {
+--+      margin-bottom: 1rem;
+--+    }
+--+
+--+    // Ny stil för en public tag
+--+    &__tag {
+--+      display: inline-block;
+--+      padding: 0.25rem 0.5rem;
+--+      background-color: $color-primary-light; // Se till att din _variables.scss har en lämplig färg
+--+      color: $color-text-dark;
+--+      font-size: 0.875rem;
+--+      border-radius: 4px;
+--     }
 --   }
 -- }
--diff --git a/frontend/src/app/components/deck-builder/deck-builder.component.html b/frontend/src/app/components/deck-builder/deck-builder.component.html
--index 3a08851..468c56d 100644
----- a/frontend/src/app/components/deck-builder/deck-builder.component.html
--+++ b/frontend/src/app/components/deck-builder/deck-builder.component.html
--@@ -12,12 +12,23 @@
--           placeholder="Deck Name"
--           required
--         />
--+
--         <textarea
--           class="deck-builder__textarea"
--           formControlName="description"
--           placeholder="Deck Description"
--           required
--         ></textarea>
--+
--+        <label class="deck-builder__checkbox-label">
--+          <input
--+            type="checkbox"
--+            formControlName="isPublic"
--+            class="deck-builder__checkbox"
--+          />
--+          Make this deck public
--+        </label>
--+
--         <button class="deck-builder__button" type="submit">Create Deck</button>
--       </form>
--     </div>
--@@ -26,10 +37,16 @@
--       <div *ngIf="decks.length === 0" class="deck-builder__empty">
--         No decks available.
--       </div>
--+
--       <div class="deck-card" *ngFor="let deck of decks">
--         <div class="deck-card__info">
---          <h2 class="deck-card__title">{{ deck.name }}</h2>
--+          <h3 class="deck-card__title">{{ deck.name }}</h3>
--           <p class="deck-card__details">{{ deck.description }}</p>
--+
--+          <div class="deck-card__meta" *ngIf="deck.isPublic">
--+            <span class="deck-card__tag">🌍 Public Deck</span>
--+          </div>
--+
--           <button class="deck-card__button" (click)="viewDeck(deck._id)">
--             View Deck
--           </button>
--diff --git a/frontend/src/app/components/deck-builder/deck-builder.component.scss b/frontend/src/app/components/deck-builder/deck-builder.component.scss
--index 9d96bc4..2965a47 100644
----- a/frontend/src/app/components/deck-builder/deck-builder.component.scss
--+++ b/frontend/src/app/components/deck-builder/deck-builder.component.scss
--@@ -24,6 +24,7 @@
--       align-items: center;
--     }
-- 
--+    // Input och textarea från tidigare
--     &__input,
--     &__textarea {
--       width: 100%;
--@@ -37,6 +38,22 @@
--     &__button {
--       @include nav-link-resume;
--     }
--+
--+    // Ny stil för checkbox-label: visar checkboxen och texten snyggt
--+    &__checkbox-label {
--+      display: flex;
--+      align-items: center;
--+      gap: 0.5rem;
--+      font-size: 1rem;
--+      color: $color-text-dark;
--+      user-select: none;
--+    }
--+
--+    // Liten stil för checkboxen
--+    &__checkbox {
--+      width: 1rem;
--+      height: 1rem;
--+    }
--   }
-- 
--   &__grid {
--@@ -71,6 +88,22 @@
-- 
--     &__button {
--       @include nav-link-resume;
--+      margin-top: 1rem;
--+    }
--+
--+    // Ny meta-sektion för extra info, exempelvis public tag
--+    &__meta {
--+      margin-bottom: 1rem;
--+    }
--+
--+    // Ny stil för en public tag
--+    &__tag {
--+      display: inline-block;
--+      padding: 0.25rem 0.5rem;
--+      background-color: $color-primary-light; // Se till att din _variables.scss har en lämplig färg
--+      color: $color-text-dark;
--+      font-size: 0.875rem;
--+      border-radius: 4px;
--     }
--   }
-- }
--diff --git a/frontend/src/app/components/deck-builder/deck-builder.component.ts b/frontend/src/app/components/deck-builder/deck-builder.component.ts
--index 8fef7dd..aaf2361 100644
----- a/frontend/src/app/components/deck-builder/deck-builder.component.ts
--+++ b/frontend/src/app/components/deck-builder/deck-builder.component.ts
--@@ -1,10 +1,12 @@
---import { Component, OnInit } from "@angular/core";
---import { HttpClient } from "@angular/common/http";
--+import { Component, OnInit, ChangeDetectorRef } from "@angular/core";
-- import { Router } from "@angular/router";
---import { API_URL } from "../../app.config";
---import { ChangeDetectorRef } from "@angular/core";
---import { CommonModule } from "@angular/common"; // Import CommonModule
---import { FormBuilder, FormGroup, ReactiveFormsModule } from "@angular/forms";
--+import { CommonModule } from "@angular/common";
--+import {
--+  FormBuilder,
--+  FormGroup,
--+  ReactiveFormsModule,
--+  Validators,
--+} from "@angular/forms";
-- import { DeckService } from "../../services/deck.service";
-- 
-- @Component({
--@@ -22,25 +24,82 @@ export class DeckBuilderComponent implements OnInit {
--     private deckService: DeckService,
--     private router: Router,
--     private cdr: ChangeDetectorRef,
---    private fb: FormBuilder // Inject FormBuilder here
--+    private fb: FormBuilder
--   ) {
--     this.newDeckForm = this.fb.group({
---      name: [""],
---      description: [""],
--+      name: ["", Validators.required],
--+      description: ["", Validators.required],
--+      isPublic: [false], // ✅ Ny form control
--     });
--   }
-- 
--   ngOnInit(): void {
---    this.deckService.getAllDecks().subscribe((data) => {
---      this.decks = data;
--+    this.loadDecks();
--+  }
--+
--+  loadDecks(): void {
--+    // Skapa två parallella anrop
--+    const userDecks$ = this.deckService.getAllDecks();
--+    const publicDecks$ = this.deckService.getPublicDecks();
--+
--+    userDecks$.subscribe({
--+      next: (userDecks) => {
--+        publicDecks$.subscribe({
--+          next: (publicDecks) => {
--+            // Filtrera bort duplicerade (t.ex. om användarens deck också är publik)
--+            const uniquePublicDecks = publicDecks.filter(
--+              (publicDeck: any) =>
--+                !userDecks.some(
--+                  (userDeck: any) => userDeck._id === publicDeck._id
--+                )
--+            );
--+
--+            this.decks = [...userDecks, ...uniquePublicDecks];
--+            this.cdr.detectChanges();
--+          },
--+          error: (err) => {
--+            console.error("Failed to fetch public decks:", err);
--+          },
--+        });
--+      },
--+      error: (err) => {
--+        // Om användaren inte är inloggad, hämta bara publika decks
--+        if (err.status === 401) {
--+          publicDecks$.subscribe({
--+            next: (publicDecks) => {
--+              this.decks = publicDecks;
--+              this.cdr.detectChanges();
--+            },
--+            error: (err2) => {
--+              console.error(
--+                "Failed to fetch public decks (unauthenticated):",
--+                err2
--+              );
--+            },
--+          });
--+        } else {
--+          console.error("Failed to fetch user decks:", err);
--+        }
--+      },
--     });
--   }
-- 
--   createDeck(): void {
--+    if (this.newDeckForm.invalid) {
--+      return;
--+    }
--+
--     const newDeck = this.newDeckForm.value;
---    this.deckService.createDeck(newDeck).subscribe((data) => {
---      this.decks.push(data);
---      this.newDeckForm.reset();
--+
--+    this.deckService.createDeck(newDeck).subscribe({
--+      next: (createdDeck) => {
--+        this.decks.push(createdDeck);
--+        this.newDeckForm.reset({ isPublic: false }); // 🔁 behåll false som default
--+        this.cdr.detectChanges();
--+      },
--+      error: (err) => {
--+        console.error("Failed to create deck:", err);
--+      },
--     });
--   }
-- 
--diff --git a/frontend/src/app/services/deck.service.ts b/frontend/src/app/services/deck.service.ts
--index a1bbf79..a08d95e 100644
----- a/frontend/src/app/services/deck.service.ts
--+++ b/frontend/src/app/services/deck.service.ts
--@@ -12,6 +12,12 @@ export class DeckService {
--     this.API_URL = `${apiUrl}/api/v1`;
--   }
-- 
--+  getPublicDecks(): Observable<any> {
--+    return this.http.get(`${this.API_URL}/decks/public`, {
--+      withCredentials: true, // valfritt, men säkert
--+    });
--+  }
--+
--   // Fetch all decks (auth required)
--   getAllDecks(): Observable<any> {
--     return this.http.get(`${this.API_URL}/decks`, {
--diff --git a/frontend/src/styles/_variables.scss b/frontend/src/styles/_variables.scss
--index 1836174..3abfa5c 100644
----- a/frontend/src/styles/_variables.scss
--+++ b/frontend/src/styles/_variables.scss
--@@ -1,11 +1,17 @@
-- // 🎨 Färger
---$color-primary: #007aff; // En mer modern blå (lik Apple blue)
---$color-accent: #ff6b6b; // En kontrastfärg för t.ex. call-to-actions
--+$color-primary: #007aff; // Apple blue
--+$color-primary-light: #66b3ff; // Ljusare blå för hover eller bakgrunder
--+$color-primary-dark: #0051b3; // Mörkare blå för aktiva tillstånd
-- 
---$color-bg-light: #ffffff; // 👈 vit bakgrund
--+$color-accent: #ff6b6b; // Accentfärg (t.ex. röd/orange CTA)
--+$color-accent-light: #ffa8a8;
--+$color-accent-dark: #cc4c4c;
--+
--+$color-bg-light: #ffffff;
-- $color-bg-dark: #121212;
-- 
---$color-text-dark: #111111; // lite mörkare än din nuvarande #222 för bättre kontrast
---$color-text-muted: #666;
--+$color-text-dark: #111111;
--+$color-text-muted: #666666;
-- $color-text-light: #ffffff;
--+
-- $color-border: #e0e0e0;
+--diff --git a/frontend/src/app/components/deck-builder/deck-builder.component.ts b/frontend/src/app/components/deck-builder/deck-builder.component.ts
+--index 8fef7dd..aaf2361 100644
+----- a/frontend/src/app/components/deck-builder/deck-builder.component.ts
+--+++ b/frontend/src/app/components/deck-builder/deck-builder.component.ts
+--@@ -1,10 +1,12 @@
+---import { Component, OnInit } from "@angular/core";
+---import { HttpClient } from "@angular/common/http";
+--+import { Component, OnInit, ChangeDetectorRef } from "@angular/core";
+-- import { Router } from "@angular/router";
+---import { API_URL } from "../../app.config";
+---import { ChangeDetectorRef } from "@angular/core";
+---import { CommonModule } from "@angular/common"; // Import CommonModule
+---import { FormBuilder, FormGroup, ReactiveFormsModule } from "@angular/forms";
+--+import { CommonModule } from "@angular/common";
+--+import {
+--+  FormBuilder,
+--+  FormGroup,
+--+  ReactiveFormsModule,
+--+  Validators,
+--+} from "@angular/forms";
+-- import { DeckService } from "../../services/deck.service";
+-- 
+-- @Component({
+--@@ -22,25 +24,82 @@ export class DeckBuilderComponent implements OnInit {
+--     private deckService: DeckService,
+--     private router: Router,
+--     private cdr: ChangeDetectorRef,
+---    private fb: FormBuilder // Inject FormBuilder here
+--+    private fb: FormBuilder
+--   ) {
+--     this.newDeckForm = this.fb.group({
+---      name: [""],
+---      description: [""],
+--+      name: ["", Validators.required],
+--+      description: ["", Validators.required],
+--+      isPublic: [false], // ✅ Ny form control
+--     });
+--   }
+-- 
+--   ngOnInit(): void {
+---    this.deckService.getAllDecks().subscribe((data) => {
+---      this.decks = data;
+--+    this.loadDecks();
+--+  }
+--+
+--+  loadDecks(): void {
+--+    // Skapa två parallella anrop
+--+    const userDecks$ = this.deckService.getAllDecks();
+--+    const publicDecks$ = this.deckService.getPublicDecks();
+--+
+--+    userDecks$.subscribe({
+--+      next: (userDecks) => {
+--+        publicDecks$.subscribe({
+--+          next: (publicDecks) => {
+--+            // Filtrera bort duplicerade (t.ex. om användarens deck också är publik)
+--+            const uniquePublicDecks = publicDecks.filter(
+--+              (publicDeck: any) =>
+--+                !userDecks.some(
+--+                  (userDeck: any) => userDeck._id === publicDeck._id
+--+                )
+--+            );
+--+
+--+            this.decks = [...userDecks, ...uniquePublicDecks];
+--+            this.cdr.detectChanges();
+--+          },
+--+          error: (err) => {
+--+            console.error("Failed to fetch public decks:", err);
+--+          },
+--+        });
+--+      },
+--+      error: (err) => {
+--+        // Om användaren inte är inloggad, hämta bara publika decks
+--+        if (err.status === 401) {
+--+          publicDecks$.subscribe({
+--+            next: (publicDecks) => {
+--+              this.decks = publicDecks;
+--+              this.cdr.detectChanges();
+--+            },
+--+            error: (err2) => {
+--+              console.error(
+--+                "Failed to fetch public decks (unauthenticated):",
+--+                err2
+--+              );
+--+            },
+--+          });
+--+        } else {
+--+          console.error("Failed to fetch user decks:", err);
+--+        }
+--+      },
+--     });
+--   }
+-- 
+--   createDeck(): void {
+--+    if (this.newDeckForm.invalid) {
+--+      return;
+--+    }
+--+
+--     const newDeck = this.newDeckForm.value;
+---    this.deckService.createDeck(newDeck).subscribe((data) => {
+---      this.decks.push(data);
+---      this.newDeckForm.reset();
+--+
+--+    this.deckService.createDeck(newDeck).subscribe({
+--+      next: (createdDeck) => {
+--+        this.decks.push(createdDeck);
+--+        this.newDeckForm.reset({ isPublic: false }); // 🔁 behåll false som default
+--+        this.cdr.detectChanges();
+--+      },
+--+      error: (err) => {
+--+        console.error("Failed to create deck:", err);
+--+      },
+--     });
+--   }
+-- 
+--diff --git a/frontend/src/app/services/deck.service.ts b/frontend/src/app/services/deck.service.ts
+--index a1bbf79..a08d95e 100644
+----- a/frontend/src/app/services/deck.service.ts
+--+++ b/frontend/src/app/services/deck.service.ts
+--@@ -12,6 +12,12 @@ export class DeckService {
+--     this.API_URL = `${apiUrl}/api/v1`;
+--   }
+-- 
+--+  getPublicDecks(): Observable<any> {
+--+    return this.http.get(`${this.API_URL}/decks/public`, {
+--+      withCredentials: true, // valfritt, men säkert
+--+    });
+--+  }
+--+
+--   // Fetch all decks (auth required)
+--   getAllDecks(): Observable<any> {
+--     return this.http.get(`${this.API_URL}/decks`, {
+--diff --git a/frontend/src/styles/_variables.scss b/frontend/src/styles/_variables.scss
+--index 1836174..3abfa5c 100644
+----- a/frontend/src/styles/_variables.scss
+--+++ b/frontend/src/styles/_variables.scss
+--@@ -1,11 +1,17 @@
+-- // 🎨 Färger
+---$color-primary: #007aff; // En mer modern blå (lik Apple blue)
+---$color-accent: #ff6b6b; // En kontrastfärg för t.ex. call-to-actions
+--+$color-primary: #007aff; // Apple blue
+--+$color-primary-light: #66b3ff; // Ljusare blå för hover eller bakgrunder
+--+$color-primary-dark: #0051b3; // Mörkare blå för aktiva tillstånd
+-- 
+---$color-bg-light: #ffffff; // 👈 vit bakgrund
+--+$color-accent: #ff6b6b; // Accentfärg (t.ex. röd/orange CTA)
+--+$color-accent-light: #ffa8a8;
+--+$color-accent-dark: #cc4c4c;
+--+
+--+$color-bg-light: #ffffff;
+-- $color-bg-dark: #121212;
+-- 
+---$color-text-dark: #111111; // lite mörkare än din nuvarande #222 för bättre kontrast
+---$color-text-muted: #666;
+--+$color-text-dark: #111111;
+--+$color-text-muted: #666666;
+-- $color-text-light: #ffffff;
+--+
+-- $color-border: #e0e0e0;
+diff --git a/frontend/src/app/app.component.scss b/frontend/src/app/app.component.scss
+index e69de29..7975019 100644
+--- a/frontend/src/app/app.component.scss
++++ b/frontend/src/app/app.component.scss
+@@ -0,0 +1,3 @@
++main {
++  padding-top: 6rem; // Justera vid behov beroende på navbarens höjd
++}
+diff --git a/frontend/src/app/app.routes.ts b/frontend/src/app/app.routes.ts
+index c6963eb..2c9c2a8 100644
+--- a/frontend/src/app/app.routes.ts
++++ b/frontend/src/app/app.routes.ts
+@@ -1,13 +1,8 @@
+ import { Routes } from "@angular/router";
+ import { DeckBuilderComponent } from "./components/deck-builder/deck-builder.component";
+ import { DeckDetailComponent } from "./components/deck-detail/deck-detail.component";
+-import { CardBuilderComponent } from "./components/card-builder/card-builder.component";
+ 
+ export const routes: Routes = [
+   { path: "", component: DeckBuilderComponent }, // Default route to show all decks
+   { path: "decks/:id", component: DeckDetailComponent }, // Route to show a specific deck
+-  {
+-    path: "card-builder",
+-    component: CardBuilderComponent,
+-  },
+ ];
+diff --git a/frontend/src/app/components/card-builder/card-builder.component.html b/frontend/src/app/components/card-builder/card-builder.component.html
+deleted file mode 100644
+index 90bc8b8..0000000
+--- a/frontend/src/app/components/card-builder/card-builder.component.html
++++ /dev/null
+@@ -1,31 +0,0 @@
+-<section id="card-builder" class="card-builder">
+-  <h1>Search for a Card</h1>
+-  <form (ngSubmit)="fetchCard()">
+-    <input
+-      [(ngModel)]="cardName"
+-      name="cardName"
+-      placeholder="Enter Card Name"
+-      required
+-    />
+-    <button type="submit">Search</button>
+-  </form>
+-
+-  <div *ngIf="fetchedCard" class="card-result">
+-    <h2>{{ fetchedCard.name }}</h2>
+-    <p><strong>Type:</strong> {{ fetchedCard.type_line }}</p>
+-    <p><strong>Mana Cost:</strong> {{ fetchedCard.mana_cost }}</p>
+-    <p><strong>Oracle Text:</strong> {{ fetchedCard.oracle_text }}</p>
+-    <img [src]="fetchedCard.image_uris?.normal" alt="{{ fetchedCard.name }}" />
+-    <!-- Add a button to save the fetched card -->
+-    <button (click)="saveFetchedCard()">Save Card to Database</button>
+-  </div>
+-
+-  <div *ngIf="savedCard" class="saved-card">
+-    <h1>Saved Card</h1>
+-    <h2>{{ savedCard.name }}</h2>
+-    <p><strong>Type:</strong> {{ savedCard.type }}</p>
+-    <p><strong>Mana Cost:</strong> {{ savedCard.manaCost }}</p>
+-    <p><strong>Text:</strong> {{ savedCard.text }}</p>
+-    <img [src]="savedCard.imageUrl" [alt]="savedCard.name" />
+-  </div>
+-</section>
+diff --git a/frontend/src/app/components/card-builder/card-builder.component.scss b/frontend/src/app/components/card-builder/card-builder.component.scss
+deleted file mode 100644
+index a41ac00..0000000
+--- a/frontend/src/app/components/card-builder/card-builder.component.scss
++++ /dev/null
+@@ -1,77 +0,0 @@
+-@use "../../../styles/variables" as *;
+-@use "../../../styles/mixins" as *;
+-
+-.card-builder {
+-  @include section-padding;
+-
+-  &__header {
+-    text-align: center;
+-    margin-bottom: 2rem;
+-
+-    &__title {
+-      @include hero-title(center, $color-text-dark);
+-    }
+-  }
+-
+-  &__add-form {
+-    margin-bottom: 3rem;
+-    text-align: center;
+-
+-    form {
+-      display: flex;
+-      flex-direction: column;
+-      gap: 1rem;
+-      align-items: center;
+-    }
+-
+-    &__input,
+-    &__textarea {
+-      width: 100%;
+-      max-width: 500px;
+-      padding: 0.75rem;
+-      border: 1px solid $color-border;
+-      border-radius: 8px;
+-      font-size: 1rem;
+-    }
+-
+-    &__button {
+-      @include nav-link-resume;
+-    }
+-  }
+-
+-  &__grid {
+-    display: grid;
+-    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+-    gap: 2rem;
+-
+-    &__empty {
+-      @include text-paragraph($color-text-muted);
+-      text-align: center;
+-    }
+-  }
+-
+-  .deck-card {
+-    padding: 1.5rem;
+-    border: 1px solid $color-border;
+-    border-radius: 8px;
+-    background-color: $color-bg-light;
+-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+-
+-    &__info {
+-      text-align: center;
+-    }
+-
+-    &__title {
+-      @include subsection-title(center, $color-text-dark);
+-    }
+-
+-    &__details {
+-      @include text-paragraph($color-text-muted);
+-      margin-bottom: 1rem;
+-    }
+-
+-    &__button {
+-      @include nav-link-resume;
+-    }
+-  }
+-}
+diff --git a/frontend/src/app/components/card-builder/card-builder.component.spec.ts b/frontend/src/app/components/card-builder/card-builder.component.spec.ts
+deleted file mode 100644
+index 987b894..0000000
+--- a/frontend/src/app/components/card-builder/card-builder.component.spec.ts
++++ /dev/null
+@@ -1,23 +0,0 @@
+-import { ComponentFixture, TestBed } from '@angular/core/testing';
+-
+-import { CardBuilderComponent } from './card-builder.component';
+-
+-describe('CardBuilderComponent', () => {
+-  let component: CardBuilderComponent;
+-  let fixture: ComponentFixture<CardBuilderComponent>;
+-
+-  beforeEach(async () => {
+-    await TestBed.configureTestingModule({
+-      imports: [CardBuilderComponent]
+-    })
+-    .compileComponents();
+-
+-    fixture = TestBed.createComponent(CardBuilderComponent);
+-    component = fixture.componentInstance;
+-    fixture.detectChanges();
+-  });
+-
+-  it('should create', () => {
+-    expect(component).toBeTruthy();
+-  });
+-});
+diff --git a/frontend/src/app/components/card-builder/card-builder.component.ts b/frontend/src/app/components/card-builder/card-builder.component.ts
+deleted file mode 100644
+index 3c316a0..0000000
+--- a/frontend/src/app/components/card-builder/card-builder.component.ts
++++ /dev/null
+@@ -1,79 +0,0 @@
+-import { Component } from "@angular/core";
+-import { CardService } from "../../services/card.service";
+-import { CommonModule } from "@angular/common"; // Import CommonModule
+-import { FormsModule } from "@angular/forms"; // Import FormsModule
+-
+-@Component({
+-  selector: "app-card-builder",
+-  imports: [CommonModule, FormsModule],
+-
+-  templateUrl: "./card-builder.component.html",
+-  styleUrls: ["./card-builder.component.scss"],
+-})
+-export class CardBuilderComponent {
+-  cardName: string = ""; // Input for card name
+-  fetchedCard: any = null; // Store fetched card data
+-  savedCard: any = null; // Store saved card data
+-  newCard = { name: "", type: "", manaCost: "", text: "" }; // Form for creating a new card
+-
+-  constructor(private cardService: CardService) {}
+-
+-  // Fetch card by name
+-  fetchCard(): void {
+-    if (!this.cardName) {
+-      console.error("Card name is required.");
+-      return;
+-    }
+-
+-    this.cardService.getCardByName(this.cardName).subscribe({
+-      next: (data) => {
+-        console.log("Fetched card:", data);
+-        this.fetchedCard = data; // Store the fetched card data
+-      },
+-      error: (err) => {
+-        console.error("Failed to fetch card:", err);
+-        this.fetchedCard = null; // Reset on error
+-      },
+-    });
+-  }
+-
+-  // Create a new card
+-  createCard(): void {
+-    if (
+-      !this.newCard.name ||
+-      !this.newCard.type ||
+-      !this.newCard.manaCost ||
+-      !this.newCard.text
+-    ) {
+-      console.error("All fields are required to create a card.");
+-      return;
+-    }
+-
+-    this.cardService.createCard(this.newCard).subscribe({
+-      next: (data) => {
+-        console.log("Card created:", data);
+-        this.newCard = { name: "", type: "", manaCost: "", text: "" }; // Reset form
+-      },
+-      error: (err) => {
+-        console.error("Failed to create card:", err);
+-      },
+-    });
+-  }
+-
+-  saveFetchedCard(): void {
+-    if (!this.fetchedCard) {
+-      console.error("No card fetched to save.");
+-      return;
+-    }
+-
+-    this.cardService.addCardFromScryfall(this.fetchedCard.name).subscribe({
+-      next: (data: any) => {
+-        console.log("Card saved:", data);
+-        this.savedCard = data; // Store the saved card data
+-      },
+-      error: (err: any) => {
+-        console.error("Failed to save card:", err);
+-      },
+-    });
+-  }
+-}
+diff --git a/frontend/src/app/components/deck-detail/deck-detail.component.html b/frontend/src/app/components/deck-detail/deck-detail.component.html
+index 1872a3a..80d7b62 100644
+--- a/frontend/src/app/components/deck-detail/deck-detail.component.html
++++ b/frontend/src/app/components/deck-detail/deck-detail.component.html
+@@ -1,47 +1,76 @@
+-<section id="deck-detail" class="deck-detail">
+-  <div class="deck-detail" *ngIf="deck">
+-    <header class="deck-detail__header">
+-      <h1>{{ deck.name }}</h1>
+-      <p>{{ deck.description }}</p>
+-    </header>
++<section id="deck-detail" class="deck-detail" *ngIf="deck">
++  <header class="deck-detail__header">
++    <h1>{{ deck.name }}</h1>
++    <p>{{ deck.description }}</p>
++  </header>
+ 
+-    <!-- Card Search Section -->
+-    <div>
+-      <h3>Search for Cards</h3>
++  <!-- 🔍 Card Search Section -->
++  <section class="deck-detail__search">
++    <h2>Search for Cards</h2>
++    <div class="deck-detail__search-controls">
+       <input
+         type="text"
+         [(ngModel)]="searchQuery"
+-        placeholder="Enter Card Name"
++        (input)="searchCards()"
++        placeholder="Type card name..."
++        class="deck-detail__input"
++        autocomplete="off"
+       />
+-      <button (click)="searchCards()">Search</button>
+     </div>
+ 
+-    <!-- Search Results -->
+-    <div *ngIf="searchResults.length > 0" class="search-results">
+-      <h3>Search Results</h3>
+-      <div
+-        class="card-result"
+-        *ngFor="let card of searchResults"
+-        (click)="selectedCard = card"
+-        [class.selected]="selectedCard === card"
+-      >
+-        <h4>{{ card.name }}</h4>
+-        <p><strong>Type:</strong> {{ card.type }}</p>
+-        <p><strong>Mana Cost:</strong> {{ card.manaCost }}</p>
++    <!-- 🎯 Search Results -->
++    <div *ngIf="searchResults.length > 0" class="deck-detail__search-results">
++      <div class="deck-detail__cards-grid">
++        <div
++          class="card-preview"
++          *ngFor="let card of searchResults"
++          (click)="selectedCard = card"
++          [class.selected]="selectedCard === card"
++        >
++          <img
++            [src]="card.image_uris?.normal || card.card_faces?.[0]?.image_uris?.normal"
++            alt="{{ card.name }}"
++          />
++          <h4>{{ card.name }}</h4>
++          <p *ngIf="card.type_line">
++            <strong>Type:</strong> {{ card.type_line }}
++          </p>
++          <p *ngIf="card.mana_cost">
++            <strong>Mana:</strong> {{ card.mana_cost }}
++          </p>
++          <p *ngIf="card.oracle_text">
++            <strong>Text:</strong> {{ card.oracle_text }}
++          </p>
++        </div>
++      </div>
++      <div class="deck-detail__add-button-wrapper" *ngIf="selectedCard">
++        <button (click)="addCardToDeck()" class="deck-detail__add-button">
++          ➕ Add "{{ selectedCard.name }}" to Deck
++        </button>
+       </div>
+-      <button *ngIf="selectedCard" (click)="addCardToDeck()">
+-        Add Selected Card to Deck
+-      </button>
+     </div>
++  </section>
+ 
+-    <!-- Cards in Deck -->
+-    <section class="deck-detail__cards">
+-      <h2>Cards in this Deck</h2>
+-      <div class="card" *ngFor="let card of deck.cards">
+-        <h3>{{ card.name }}</h3>
+-        <p>{{ card.type }} | {{ card.manaCost }}</p>
+-        <p>{{ card.text }}</p>
++  <!-- 📦 Cards in Deck -->
++  <section class="deck-detail__cards">
++    <h2>Cards in this Deck</h2>
++    <div class="deck-detail__cards-grid">
++      <div class="card-preview" *ngFor="let card of deck.cards">
++        <img
++          [src]="card.image_uris?.normal || card.card_faces?.[0]?.image_uris?.normal"
++          alt="{{ card.name }}"
++        />
++        <h4>{{ card.name }}</h4>
++        <p *ngIf="card.type_line">
++          <strong>Type:</strong> {{ card.type_line }}
++        </p>
++        <p *ngIf="card.mana_cost">
++          <strong>Mana:</strong> {{ card.mana_cost }}
++        </p>
++        <p *ngIf="card.oracle_text">
++          <strong>Text:</strong> {{ card.oracle_text }}
++        </p>
+       </div>
+-    </section>
+-  </div>
++    </div>
++  </section>
+ </section>
+diff --git a/frontend/src/app/components/deck-detail/deck-detail.component.scss b/frontend/src/app/components/deck-detail/deck-detail.component.scss
+index b45f961..9a2d149 100644
+--- a/frontend/src/app/components/deck-detail/deck-detail.component.scss
++++ b/frontend/src/app/components/deck-detail/deck-detail.component.scss
+@@ -4,73 +4,142 @@
+ .deck-detail {
+   @include section-padding;
+ 
++  display: flex;
++  flex-direction: column;
++  gap: 3rem;
++
+   &__header {
+     text-align: center;
+-    margin-bottom: 2rem;
+ 
+-    &__title {
+-      @include hero-title(center, $color-text-dark);
++    h1 {
++      font-size: 2.5rem;
++      color: $color-primary;
++      margin-bottom: 0.5rem;
++    }
++
++    p {
++      font-size: 1.2rem;
++      color: $color-text-muted;
+     }
+   }
+ 
+-  &__add-form {
+-    margin-bottom: 3rem;
++  &__search {
+     text-align: center;
+ 
+-    form {
++    h2 {
++      font-size: 1.8rem;
++      margin-bottom: 1rem;
++    }
++
++    &-controls {
+       display: flex;
+-      flex-direction: column;
+-      gap: 1rem;
++      justify-content: center;
+       align-items: center;
+-    }
++      gap: 1rem;
++      margin-bottom: 1.5rem;
+ 
+-    &__input,
+-    &__textarea {
+-      width: 100%;
+-      max-width: 500px;
+-      padding: 0.75rem;
+-      border: 1px solid $color-border;
+-      border-radius: 8px;
+-      font-size: 1rem;
+-    }
++      input {
++        padding: 0.75rem 1rem;
++        font-size: 1rem;
++        width: 250px;
++        border: 1px solid $color-border;
++        border-radius: 8px;
++      }
+ 
+-    &__button {
+-      @include nav-link-resume;
++      button {
++        @include nav-link-resume;
++        padding: 0.75rem 1.25rem;
++        font-weight: 600;
++      }
+     }
+-  }
+ 
+-  &__grid {
+-    display: grid;
+-    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+-    gap: 2rem;
++    &-results {
++      h3 {
++        margin-bottom: 1rem;
++      }
+ 
+-    &__empty {
+-      @include text-paragraph($color-text-muted);
+-      text-align: center;
++      .deck-detail__cards-grid {
++        display: grid;
++        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
++        gap: 1.5rem;
++      }
++
++      .card-preview {
++        padding: 1rem;
++        border: 2px solid transparent;
++        border-radius: 10px;
++        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.08);
++        cursor: pointer;
++        background-color: #fff;
++        transition: border 0.2s ease, transform 0.2s ease;
++
++        img {
++          width: 100%;
++          height: auto;
++          border-radius: 6px;
++          margin-bottom: 0.5rem;
++        }
++
++        h4 {
++          margin: 0.5rem 0;
++          font-size: 1.1rem;
++          color: $color-text-dark;
++        }
++
++        p {
++          font-size: 0.9rem;
++          color: $color-text-muted;
++        }
++
++        &.selected {
++          border-color: $color-accent;
++          transform: scale(1.02);
++        }
++      }
++
++      .deck-detail__add-button {
++        @include nav-link-resume;
++        margin-top: 1.5rem;
++      }
+     }
+   }
+ 
+-  .deck-card {
+-    padding: 1.5rem;
+-    border: 1px solid $color-border;
+-    border-radius: 8px;
+-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+-
+-    &__info {
++  &__cards {
++    h2 {
++      font-size: 1.8rem;
+       text-align: center;
++      margin-bottom: 1.5rem;
+     }
+ 
+-    &__title {
+-      @include subsection-title(center, $color-text-dark);
++    .deck-detail__cards-grid {
++      display: grid;
++      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
++      gap: 1.5rem;
+     }
+ 
+-    &__details {
+-      @include text-paragraph($color-text-muted);
+-      margin-bottom: 1rem;
+-    }
++    .card-preview {
++      padding: 1rem;
++      background-color: #fff;
++      border-radius: 10px;
++      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.06);
++
++      img {
++        width: 100%;
++        height: auto;
++        border-radius: 6px;
++        margin-bottom: 0.5rem;
++      }
++
++      h4 {
++        margin: 0.5rem 0;
++        font-size: 1.1rem;
++        color: $color-text-dark;
++      }
+ 
+-    &__button {
+-      @include nav-link-resume;
++      p {
++        font-size: 0.9rem;
++        color: $color-text-muted;
++      }
+     }
+   }
+ }
+diff --git a/frontend/src/app/components/deck-detail/deck-detail.component.ts b/frontend/src/app/components/deck-detail/deck-detail.component.ts
+index 6ad242c..36c2484 100644
+--- a/frontend/src/app/components/deck-detail/deck-detail.component.ts
++++ b/frontend/src/app/components/deck-detail/deck-detail.component.ts
+@@ -40,17 +40,14 @@ export class DeckDetailComponent implements OnInit {
+ 
+   // Search for cards in the database
+   searchCards(): void {
+-    if (!this.searchQuery) {
+-      console.error("Search query is required.");
+-      return;
+-    }
++    if (!this.searchQuery) return;
+ 
+-    this.cardService.searchCards(this.searchQuery).subscribe({
+-      next: (data) => {
+-        this.searchResults = data; // Store the search results
++    this.cardService.searchScryfall(this.searchQuery).subscribe({
++      next: (response) => {
++        this.searchResults = response.data || []; // Scryfall returnerar .data[]
+       },
+       error: (err) => {
+-        console.error("Failed to search for cards:", err);
++        console.error("Failed to search Scryfall:", err);
+         this.searchResults = [];
+       },
+     });
+@@ -65,12 +62,12 @@ export class DeckDetailComponent implements OnInit {
+ 
+     const deckId = this.route.snapshot.paramMap.get("id");
+     if (deckId) {
+-      this.deckService.addCardToDeck(deckId, this.selectedCard._id).subscribe({
++      this.deckService.addCardToDeck(deckId, this.selectedCard).subscribe({
+         next: (data) => {
+-          this.deck = data; // Update the deck with the new card
+-          this.searchResults = []; // Clear search results
+-          this.searchQuery = ""; // Reset input
+-          this.selectedCard = null; // Reset selected card
++          this.deck = data;
++          this.searchResults = [];
++          this.searchQuery = "";
++          this.selectedCard = null;
+         },
+         error: (err) => {
+           console.error("Failed to add card to deck:", err);
+diff --git a/frontend/src/app/components/navbar/navbar.component.html b/frontend/src/app/components/navbar/navbar.component.html
+index 8357187..2d70d36 100644
+--- a/frontend/src/app/components/navbar/navbar.component.html
++++ b/frontend/src/app/components/navbar/navbar.component.html
+@@ -38,7 +38,6 @@
+     >
+       <a href="#" class="navbar__link">Home</a>
+       <a href="#" class="navbar__link">Deck Builder</a>
+-      <a href="#card-builder" class="navbar__link">Card Builder</a>
+ 
+       <!-- Login/Logout Buttons -->
+       <div *ngIf="!isLoggedIn" class="navbar__auth">
+@@ -47,8 +46,6 @@
+       <!-- When Logged In -->
+       <div *ngIf="isLoggedIn" class="navbar__auth">
+         <a href="#" class="navbar__link">Your Decks</a>
+-        <a href="#" class="navbar__link">Collection</a>
+-        <a href="#" class="navbar__link">Wish List</a>
+         <a (click)="logout()" class="navbar__link">Logout</a>
+       </div>
+     </nav>
+diff --git a/frontend/src/app/services/card.service.ts b/frontend/src/app/services/card.service.ts
+index 9b6bd7d..a4c3bd1 100644
+--- a/frontend/src/app/services/card.service.ts
++++ b/frontend/src/app/services/card.service.ts
+@@ -1,62 +1,50 @@
+-import { Injectable, Inject } from "@angular/core";
++import { Injectable } from "@angular/core";
+ import { HttpClient } from "@angular/common/http";
+ import { Observable } from "rxjs";
+ 
+ @Injectable({
+-  providedIn: "root", // Makes the service available application-wide
++  providedIn: "root",
+ })
+ export class CardService {
+-  private API_URL: string;
+-
+-  constructor(
+-    private http: HttpClient,
+-    @Inject("API_URL") apiUrl: string // Inject the API_URL from app.config.ts
+-  ) {
+-    this.API_URL = `${apiUrl}/api/v1`; // Add /api/v1 to the base URL
+-  }
+-
+-  // Search for cards in the database
+-  searchCards(query: string): Observable<any[]> {
+-    return this.http.get<any[]>(
+-      `${this.API_URL}/cards/search?query=${encodeURIComponent(query)}`
+-    );
++  constructor(private http: HttpClient) {}
++
++  /**
++   * 🔍 Söker efter kort med valfri query.
++   * Returnerar upp till 175 kort från Scryfall som matchar texten.
++   */
++  searchScryfall(query: string): Observable<any> {
++    const url = `https://api.scryfall.com/cards/search?q=${encodeURIComponent(
++      query
++    )}`;
++    return this.http.get<any>(url);
+   }
+ 
+-  // Add a card from Scryfall to the database
+-  addCardFromScryfall(cardName: string): Observable<any> {
+-    return this.http.post<any>(`${this.API_URL}/cards/scryfall`, { cardName });
++  /**
++   * 🧠 Autocomplete för kortnamn (används till dropdown-förslag).
++   * Returnerar upp till 20 kortnamn som matchar det användaren skriver.
++   */
++  autocompleteNames(query: string): Observable<any> {
++    const url = `https://api.scryfall.com/cards/autocomplete?q=${encodeURIComponent(
++      query
++    )}`;
++    return this.http.get<any>(url);
+   }
+ 
+-  // Fetch a card by name from Scryfall
+-  getCardByName(cardName: string): Observable<any> {
+-    const url = `https://api.scryfall.com/cards/named?fuzzy=${encodeURIComponent(
++  /**
++   * 📄 Hämtar ett kort från Scryfall baserat på exakta namnet.
++   */
++  getCardFromScryfallByName(cardName: string): Observable<any> {
++    const url = `https://api.scryfall.com/cards/named?exact=${encodeURIComponent(
+       cardName
+     )}`;
+     return this.http.get<any>(url);
+   }
+ 
+-  // Fetch all cards
+-  getAllCards(): Observable<any[]> {
+-    return this.http.get<any[]>(`${this.API_URL}/cards`);
+-  }
+-
+-  // Fetch a single card by ID
+-  getCardById(cardId: string): Observable<any> {
+-    return this.http.get<any>(`${this.API_URL}/cards/${cardId}`);
+-  }
+-
+-  // Create a new card
+-  createCard(card: any): Observable<any> {
+-    return this.http.post<any>(`${this.API_URL}/cards`, card);
+-  }
+-
+-  // Update a card
+-  updateCard(cardId: string, updatedData: any): Observable<any> {
+-    return this.http.put<any>(`${this.API_URL}/cards/${cardId}`, updatedData);
+-  }
+-
+-  // Delete a card
+-  deleteCard(cardId: string): Observable<any> {
+-    return this.http.delete<any>(`${this.API_URL}/cards/${cardId}`);
++  /**
++   * 🆔 Hämtar ett specifikt kort från Scryfall med dess ID.
++   */
++  getCardFromScryfallById(cardId: string): Observable<any> {
++    const url = `https://api.scryfall.com/cards/${cardId}`;
++    return this.http.get<any>(url);
+   }
+ }
+diff --git a/frontend/src/app/services/deck.service.ts b/frontend/src/app/services/deck.service.ts
+index a08d95e..d151dba 100644
+--- a/frontend/src/app/services/deck.service.ts
++++ b/frontend/src/app/services/deck.service.ts
+@@ -14,50 +14,45 @@ export class DeckService {
+ 
+   getPublicDecks(): Observable<any> {
+     return this.http.get(`${this.API_URL}/decks/public`, {
+-      withCredentials: true, // valfritt, men säkert
++      withCredentials: true,
+     });
+   }
+ 
+-  // Fetch all decks (auth required)
+   getAllDecks(): Observable<any> {
+     return this.http.get(`${this.API_URL}/decks`, {
+       withCredentials: true,
+     });
+   }
+ 
+-  // Get a deck by ID (auth required)
+   getDeckById(deckId: string): Observable<any> {
+     return this.http.get(`${this.API_URL}/decks/${deckId}`, {
+       withCredentials: true,
+     });
+   }
+ 
+-  // Create a new deck (auth required)
+   createDeck(deckData: any): Observable<any> {
+     return this.http.post(`${this.API_URL}/decks`, deckData, {
+       withCredentials: true,
+     });
+   }
+ 
+-  // Update a deck (auth required)
+   updateDeck(deckId: string, deckData: any): Observable<any> {
+     return this.http.put(`${this.API_URL}/decks/${deckId}`, deckData, {
+       withCredentials: true,
+     });
+   }
+ 
+-  // Delete a deck (auth required)
+   deleteDeck(deckId: string): Observable<any> {
+     return this.http.delete(`${this.API_URL}/decks/${deckId}`, {
+       withCredentials: true,
+     });
+   }
+ 
+-  // Add a card to a deck (auth required)
+-  addCardToDeck(deckId: string, cardId: string): Observable<any> {
++  // ✅ Skicka hela kortobjektet till backend istället för bara ett ID
++  addCardToDeck(deckId: string, card: any): Observable<any> {
+     return this.http.put(
+       `${this.API_URL}/decks/${deckId}/add-card`,
+-      { cardId },
++      { card },
+       {
+         withCredentials: true,
+       }
+diff --git a/frontend/src/styles/_mixins.scss b/frontend/src/styles/_mixins.scss
+index 1d768e2..368a3b9 100644
+--- a/frontend/src/styles/_mixins.scss
++++ b/frontend/src/styles/_mixins.scss
+@@ -47,8 +47,8 @@
+ 
+ /* 📐 Padding för sektioner */
+ @mixin section-padding {
+-  padding-top: clamp(4rem, 10vw, 9rem);
+-  padding-bottom: clamp(6rem, 14vw, 13rem);
++  padding-top: clamp(2rem, 6vw, 4rem);
++  padding-bottom: clamp(3rem, 8vw, 5rem);
+ }
+ 
+ @mixin hero-padding {

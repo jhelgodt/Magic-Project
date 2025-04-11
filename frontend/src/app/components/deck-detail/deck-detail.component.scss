@@ -4,73 +4,142 @@
 .deck-detail {
   @include section-padding;
 
+  display: flex;
+  flex-direction: column;
+  gap: 3rem;
+
   &__header {
     text-align: center;
-    margin-bottom: 2rem;
 
-    &__title {
-      @include hero-title(center, $color-text-dark);
+    h1 {
+      font-size: 2.5rem;
+      color: $color-primary;
+      margin-bottom: 0.5rem;
+    }
+
+    p {
+      font-size: 1.2rem;
+      color: $color-text-muted;
     }
   }
 
-  &__add-form {
-    margin-bottom: 3rem;
+  &__search {
     text-align: center;
 
-    form {
-      display: flex;
-      flex-direction: column;
-      gap: 1rem;
-      align-items: center;
-    }
-
-    &__input,
-    &__textarea {
-      width: 100%;
-      max-width: 500px;
-      padding: 0.75rem;
-      border: 1px solid $color-border;
-      border-radius: 8px;
-      font-size: 1rem;
-    }
-
-    &__button {
-      @include nav-link-resume;
-    }
-  }
-
-  &__grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-    gap: 2rem;
-
-    &__empty {
-      @include text-paragraph($color-text-muted);
-      text-align: center;
-    }
-  }
-
-  .deck-card {
-    padding: 1.5rem;
-    border: 1px solid $color-border;
-    border-radius: 8px;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-
-    &__info {
-      text-align: center;
-    }
-
-    &__title {
-      @include subsection-title(center, $color-text-dark);
-    }
-
-    &__details {
-      @include text-paragraph($color-text-muted);
+    h2 {
+      font-size: 1.8rem;
       margin-bottom: 1rem;
     }
 
-    &__button {
-      @include nav-link-resume;
+    &-controls {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 1rem;
+      margin-bottom: 1.5rem;
+
+      input {
+        padding: 0.75rem 1rem;
+        font-size: 1rem;
+        width: 250px;
+        border: 1px solid $color-border;
+        border-radius: 8px;
+      }
+
+      button {
+        @include nav-link-resume;
+        padding: 0.75rem 1.25rem;
+        font-weight: 600;
+      }
+    }
+
+    &-results {
+      h3 {
+        margin-bottom: 1rem;
+      }
+
+      .deck-detail__cards-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 1.5rem;
+      }
+
+      .card-preview {
+        padding: 1rem;
+        border: 2px solid transparent;
+        border-radius: 10px;
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.08);
+        cursor: pointer;
+        background-color: #fff;
+        transition: border 0.2s ease, transform 0.2s ease;
+
+        img {
+          width: 100%;
+          height: auto;
+          border-radius: 6px;
+          margin-bottom: 0.5rem;
+        }
+
+        h4 {
+          margin: 0.5rem 0;
+          font-size: 1.1rem;
+          color: $color-text-dark;
+        }
+
+        p {
+          font-size: 0.9rem;
+          color: $color-text-muted;
+        }
+
+        &.selected {
+          border-color: $color-accent;
+          transform: scale(1.02);
+        }
+      }
+
+      .deck-detail__add-button {
+        @include nav-link-resume;
+        margin-top: 1.5rem;
+      }
+    }
+  }
+
+  &__cards {
+    h2 {
+      font-size: 1.8rem;
+      text-align: center;
+      margin-bottom: 1.5rem;
+    }
+
+    .deck-detail__cards-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 1.5rem;
+    }
+
+    .card-preview {
+      padding: 1rem;
+      background-color: #fff;
+      border-radius: 10px;
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.06);
+
+      img {
+        width: 100%;
+        height: auto;
+        border-radius: 6px;
+        margin-bottom: 0.5rem;
+      }
+
+      h4 {
+        margin: 0.5rem 0;
+        font-size: 1.1rem;
+        color: $color-text-dark;
+      }
+
+      p {
+        font-size: 0.9rem;
+        color: $color-text-muted;
+      }
     }
   }
 }

@@ -1,47 +1,76 @@
-<section id="deck-detail" class="deck-detail">
-  <div class="deck-detail" *ngIf="deck">
-    <header class="deck-detail__header">
-      <h1>{{ deck.name }}</h1>
-      <p>{{ deck.description }}</p>
-    </header>
+<section id="deck-detail" class="deck-detail" *ngIf="deck">
+  <header class="deck-detail__header">
+    <h1>{{ deck.name }}</h1>
+    <p>{{ deck.description }}</p>
+  </header>
 
-    <!-- Card Search Section -->
-    <div>
-      <h3>Search for Cards</h3>
+  <!-- 🔍 Card Search Section -->
+  <section class="deck-detail__search">
+    <h2>Search for Cards</h2>
+    <div class="deck-detail__search-controls">
       <input
         type="text"
         [(ngModel)]="searchQuery"
-        placeholder="Enter Card Name"
+        (input)="searchCards()"
+        placeholder="Type card name..."
+        class="deck-detail__input"
+        autocomplete="off"
       />
-      <button (click)="searchCards()">Search</button>
     </div>
 
-    <!-- Search Results -->
-    <div *ngIf="searchResults.length > 0" class="search-results">
-      <h3>Search Results</h3>
-      <div
-        class="card-result"
-        *ngFor="let card of searchResults"
-        (click)="selectedCard = card"
-        [class.selected]="selectedCard === card"
-      >
+    <!-- 🎯 Search Results -->
+    <div *ngIf="searchResults.length > 0" class="deck-detail__search-results">
+      <div class="deck-detail__cards-grid">
+        <div
+          class="card-preview"
+          *ngFor="let card of searchResults"
+          (click)="selectedCard = card"
+          [class.selected]="selectedCard === card"
+        >
+          <img
+            [src]="card.image_uris?.normal || card.card_faces?.[0]?.image_uris?.normal"
+            alt="{{ card.name }}"
+          />
+          <h4>{{ card.name }}</h4>
+          <p *ngIf="card.type_line">
+            <strong>Type:</strong> {{ card.type_line }}
+          </p>
+          <p *ngIf="card.mana_cost">
+            <strong>Mana:</strong> {{ card.mana_cost }}
+          </p>
+          <p *ngIf="card.oracle_text">
+            <strong>Text:</strong> {{ card.oracle_text }}
+          </p>
+        </div>
+      </div>
+      <div class="deck-detail__add-button-wrapper" *ngIf="selectedCard">
+        <button (click)="addCardToDeck()" class="deck-detail__add-button">
+          ➕ Add "{{ selectedCard.name }}" to Deck
+        </button>
+      </div>
+    </div>
+  </section>
+
+  <!-- 📦 Cards in Deck -->
+  <section class="deck-detail__cards">
+    <h2>Cards in this Deck</h2>
+    <div class="deck-detail__cards-grid">
+      <div class="card-preview" *ngFor="let card of deck.cards">
+        <img
+          [src]="card.image_uris?.normal || card.card_faces?.[0]?.image_uris?.normal"
+          alt="{{ card.name }}"
+        />
         <h4>{{ card.name }}</h4>
-        <p><strong>Type:</strong> {{ card.type }}</p>
-        <p><strong>Mana Cost:</strong> {{ card.manaCost }}</p>
+        <p *ngIf="card.type_line">
+          <strong>Type:</strong> {{ card.type_line }}
+        </p>
+        <p *ngIf="card.mana_cost">
+          <strong>Mana:</strong> {{ card.mana_cost }}
+        </p>
+        <p *ngIf="card.oracle_text">
+          <strong>Text:</strong> {{ card.oracle_text }}
+        </p>
       </div>
-      <button *ngIf="selectedCard" (click)="addCardToDeck()">
-        Add Selected Card to Deck
-      </button>
     </div>
-
-    <!-- Cards in Deck -->
-    <section class="deck-detail__cards">
-      <h2>Cards in this Deck</h2>
-      <div class="card" *ngFor="let card of deck.cards">
-        <h3>{{ card.name }}</h3>
-        <p>{{ card.type }} | {{ card.manaCost }}</p>
-        <p>{{ card.text }}</p>
-      </div>
-    </section>
-  </div>
+  </section>
 </section>

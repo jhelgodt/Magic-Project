@@ -14,21 +14,22 @@ declare global {
 
 export const getPublicDecks: RequestHandler = async (req, res) => {
   try {
-    const publicDecks = await Deck.find({ isPublic: true }).populate("cards");
+    const publicDecks = await Deck.find({ isPublic: true });
     res.json(publicDecks);
   } catch (err) {
     res.status(500).json({ error: "Failed to fetch public decks" });
   }
 };
-// 🔁 Lägg till ett kort i en deck
+
+// 🔁 Lägg till ett kort i en deck (nu sparar vi hela kortobjektet istället för bara ID)
 export const addCardToDeck: RequestHandler = async (req, res) => {
   try {
-    const { cardId } = req.body;
+    const { card } = req.body;
     const deck = await Deck.findByIdAndUpdate(
       req.params.id,
-      { $push: { cards: cardId } },
+      { $push: { cards: card } },
       { new: true }
-    ).populate("cards");
+    );
 
     if (!deck) {
       res.status(404).json({ error: "Deck not found" });
@@ -36,14 +37,11 @@ export const addCardToDeck: RequestHandler = async (req, res) => {
     }
 
     res.json(deck);
-    return;
   } catch (err) {
     res.status(400).json({ error: "Failed to add card to deck" });
-    return;
   }
 };
 
-// 📄 Hämta alla decks för den inloggade användaren
 export const getAllDecks: RequestHandler = async (req, res) => {
   if (!req.user) {
     res.status(401).json({ error: "Not authenticated" });
@@ -51,17 +49,16 @@ export const getAllDecks: RequestHandler = async (req, res) => {
   }
 
   try {
-    const decks = await Deck.find({ user: req.user._id }).populate("cards");
+    const decks = await Deck.find({ user: req.user._id });
     res.json(decks);
   } catch (err) {
     res.status(500).json({ error: "Failed to fetch your decks" });
   }
 };
 
-// 📄 Hämta en enskild deck
 export const getDeckById: RequestHandler = async (req, res) => {
   try {
-    const deck = await Deck.findById(req.params.id).populate("cards");
+    const deck = await Deck.findById(req.params.id);
 
     if (!deck) {
       res.status(404).json({ error: "Deck not found" });
@@ -74,7 +71,6 @@ export const getDeckById: RequestHandler = async (req, res) => {
   }
 };
 
-// ➕ Skapa ny deck kopplad till användare
 export const createDeck: RequestHandler = async (req, res) => {
   if (!req.user) {
     res.status(401).json({ error: "Not authenticated" });
@@ -93,7 +89,6 @@ export const createDeck: RequestHandler = async (req, res) => {
   }
 };
 
-// ❌ Ta bort deck
 export const deleteDeck: RequestHandler = async (req, res) => {
   try {
     const deletedDeck = await Deck.findByIdAndDelete(req.params.id);
@@ -109,7 +104,6 @@ export const deleteDeck: RequestHandler = async (req, res) => {
   }
 };
 
-// ✏️ Uppdatera deck
 export const updateDeck: RequestHandler = async (req, res) => {
   try {
     const updatedDeck = await Deck.findByIdAndUpdate(req.params.id, req.body, {
