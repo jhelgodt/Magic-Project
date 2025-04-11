@@ -22,6 +22,7 @@ const allowedOrigins = ["http://localhost:4200", "https://jhelgodt.github.io"];
 
 // ✅ Middleware: JSON parsing
 app.use(express.json());
+app.set("trust proxy", 1); // Trust the first proxy
 
 // ✅ Session config (must come before passport.session)
 app.use(
