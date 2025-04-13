@@ -1,8 +1,17 @@
 @use "../../../styles/variables" as *;
 @use "../../../styles/mixins" as *;
 
+.logo {
+  font-family: "Cinzel", serif;
+  font-size: 2.4rem;
+  letter-spacing: 0.5px;
+
+  &--accent {
+    color: $color-primary;
+  }
+}
 .navbar {
-  background-color: $color-bg-light;
+  background-color: $background-color;
   padding: 1rem 0;
   position: fixed;
   top: 0;
@@ -45,7 +54,7 @@
       position: absolute;
       top: 100%;
       right: 0;
-      background-color: $color-bg-light;
+      background-color: $background-color;
       width: 200px;
       padding: 1rem;
       box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
