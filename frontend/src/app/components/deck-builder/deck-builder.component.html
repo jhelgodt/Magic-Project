@@ -1,7 +1,20 @@
 <section id="deck-builder" class="deck-builder">
   <div class="deck-builder">
     <header class="deck-builder__header">
-      <h1 class="deck-builder__title">Your Decks</h1>
+      <h1 class="deck-builder__title">Deckbuilder</h1>
+
+      <p class="deck-builder__info">
+        If you're <strong>not logged in</strong>, you can only create decks by
+        checking <em>“Make this deck public”</em>. Public decks will show up
+        below once created.
+      </p>
+
+      <p class="deck-builder__info deck-builder__info--loading">
+        ⚠️ <strong>It may take a few seconds</strong> for decks to appear below
+        — this is normal while the server starts up. If you're logged in, you'll
+        see both your own decks and public ones. Click “View Deck” to browse or
+        edit a deck, add cards in bulk, or search for cards to include.
+      </p>
     </header>
 
     <div class="deck-builder__add-form">
@@ -35,7 +48,7 @@
 
     <section class="deck-builder__grid">
       <div *ngIf="decks.length === 0" class="deck-builder__empty">
-        No decks available.
+        No decks available yet. Start building!
       </div>
 
       <div class="deck-card" *ngFor="let deck of decks">

@@ -47,8 +47,8 @@
 
 /* 📐 Padding för sektioner */
 @mixin section-padding {
-  padding-top: clamp(2rem, 6vw, 4rem);
-  padding-bottom: clamp(3rem, 8vw, 5rem);
+  padding-top: clamp(1rem, 6vw, 3rem);
+  padding-bottom: clamp(1rem, 8vw, 2rem);
 }
 
 @mixin hero-padding {

@@ -1,6 +1,5 @@
 @use "../../../styles/variables" as *;
 @use "../../../styles/mixins" as *;
-
 .deck-builder {
   @include section-padding;
 
@@ -10,6 +9,17 @@
 
     &__title {
       @include hero-title(center, $color-text-dark);
+    }
+  }
+
+  &__info {
+    font-size: 1rem;
+    color: $color-text-muted;
+    margin: 0.5rem 0;
+
+    &--loading {
+      font-style: italic;
+      color: $color-accent-dark;
     }
   }
 
@@ -23,36 +33,63 @@
       gap: 1rem;
       align-items: center;
     }
+  }
 
-    // Input och textarea från tidigare
-    &__input,
-    &__textarea {
-      width: 100%;
-      max-width: 500px;
-      padding: 0.75rem;
-      border: 1px solid $color-border;
-      border-radius: 8px;
-      font-size: 1rem;
+  &__input,
+  &__textarea {
+    width: 100%;
+    max-width: 500px;
+    padding: 0.9rem 1rem;
+    border: 1px solid $color-border;
+    border-radius: 10px;
+    font-size: 1rem;
+    background-color: #fff;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.05);
+    transition: border 0.2s ease;
+
+    &:focus {
+      border-color: $color-primary;
+      outline: none;
+    }
+  }
+
+  &__textarea {
+    min-height: 120px;
+    resize: vertical;
+  }
+
+  &__checkbox-label {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 1rem;
+    color: $color-text-dark;
+    user-select: none;
+  }
+
+  &__checkbox {
+    width: 1rem;
+    height: 1rem;
+  }
+
+  &__button {
+    background-color: $color-primary;
+    color: $color-text-light;
+    padding: 0.75rem 1.5rem;
+    font-size: 1rem;
+    font-weight: 600;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background-color 0.2s ease, transform 0.1s ease;
+
+    &:hover {
+      background-color: $color-primary-dark;
+      transform: translateY(-1px);
     }
 
-    &__button {
-      @include nav-link-resume;
-    }
-
-    // Ny stil för checkbox-label: visar checkboxen och texten snyggt
-    &__checkbox-label {
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
-      font-size: 1rem;
-      color: $color-text-dark;
-      user-select: none;
-    }
-
-    // Liten stil för checkboxen
-    &__checkbox {
-      width: 1rem;
-      height: 1rem;
+    &:active {
+      transform: translateY(1px);
     }
   }
 
@@ -70,8 +107,14 @@
   .deck-card {
     padding: 1.5rem;
     border: 1px solid $color-border;
-    border-radius: 8px;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    border-radius: 10px;
+    background-color: #fff;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+    transition: box-shadow 0.2s ease;
+
+    &:hover {
+      box-shadow: 0 6px 10px rgba(0, 0, 0, 0.08);
+    }
 
     &__info {
       text-align: center;
@@ -86,24 +129,38 @@
       margin-bottom: 1rem;
     }
 
-    &__button {
-      @include nav-link-resume;
-      margin-top: 1rem;
-    }
-
-    // Ny meta-sektion för extra info, exempelvis public tag
     &__meta {
       margin-bottom: 1rem;
     }
 
-    // Ny stil för en public tag
     &__tag {
       display: inline-block;
       padding: 0.25rem 0.5rem;
-      background-color: $color-primary-light; // Se till att din _variables.scss har en lämplig färg
+      background-color: $color-primary-light;
       color: $color-text-dark;
       font-size: 0.875rem;
       border-radius: 4px;
+    }
+
+    &__button {
+      background-color: $color-accent;
+      color: #fff;
+      padding: 0.6rem 1.25rem;
+      font-weight: 600;
+      font-size: 0.95rem;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: background-color 0.2s ease, transform 0.1s ease;
+
+      &:hover {
+        background-color: $color-accent-dark;
+        transform: translateY(-1px);
+      }
+
+      &:active {
+        transform: translateY(1px);
+      }
     }
   }
 }
