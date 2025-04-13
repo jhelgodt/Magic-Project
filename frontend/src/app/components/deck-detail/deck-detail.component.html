@@ -4,6 +4,19 @@
     <p>{{ deck.description }}</p>
   </header>
 
+  <h2>Bulk Add Cards</h2>
+  <textarea
+    [(ngModel)]="bulkCardInput"
+    placeholder="Paste cards here, e.g.:
+1x Sol Ring
+1x Lightning Bolt"
+    rows="6"
+    class="deck-detail__textarea"
+  ></textarea>
+  <button (click)="bulkAddCards()" class="deck-detail__add-button">
+    ➕ Add All Cards to Deck
+  </button>
+
   <!-- 🔍 Card Search Section -->
   <section class="deck-detail__search">
     <h2>Search for Cards</h2>

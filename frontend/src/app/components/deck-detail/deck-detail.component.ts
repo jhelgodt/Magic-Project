@@ -17,6 +17,7 @@ export class DeckDetailComponent implements OnInit {
   searchQuery: string = ""; // Input for card search
   searchResults: any[] = []; // Store search results
   selectedCard: any = null; // Store the selected card
+  bulkCardInput: string = "";
 
   constructor(
     private deckService: DeckService,
@@ -74,5 +75,58 @@ export class DeckDetailComponent implements OnInit {
         },
       });
     }
+  }
+
+  bulkAddCards(): void {
+    const deckId = this.route.snapshot.paramMap.get("id");
+    if (!deckId || !this.bulkCardInput.trim()) return;
+
+    const lines = this.bulkCardInput.trim().split("\n");
+    const queries = lines
+      .map((line) => {
+        const match = line.match(/^\s*\d+x?\s+(.*)/i);
+        return match ? match[1].trim() : null;
+      })
+      .filter(Boolean);
+
+    // Hämta alla kort i följd (kan även parallelliseras)
+    const addedCards: any[] = [];
+    const failedCards: string[] = [];
+
+    const processNext = (i: number) => {
+      if (i >= queries.length) {
+        if (addedCards.length > 0) {
+          // Skicka till backend när alla är hämtade
+          this.deckService.bulkAddCardsToDeck(deckId!, addedCards).subscribe({
+            next: (data) => {
+              this.deck = data;
+              this.bulkCardInput = "";
+            },
+            error: (err) => console.error("Failed to add cards:", err),
+          });
+        }
+        if (failedCards.length > 0) {
+          console.warn("Some cards could not be found:", failedCards);
+        }
+        return;
+      }
+
+      this.cardService.searchScryfall(queries[i]!).subscribe({
+        next: (res) => {
+          const card = res.data?.[0];
+          if (card) addedCards.push(card);
+          else if (queries[i] !== null) failedCards.push(queries[i]!);
+          processNext(i + 1);
+        },
+        error: () => {
+          if (queries[i] !== null) {
+            failedCards.push(queries[i]!);
+          }
+          processNext(i + 1);
+        },
+      });
+    };
+
+    processNext(0);
   }
 }

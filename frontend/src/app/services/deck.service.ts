@@ -58,4 +58,13 @@ export class DeckService {
       }
     );
   }
+  bulkAddCardsToDeck(deckId: string, cards: any[]): Observable<any> {
+    return this.http.put(
+      `${this.API_URL}/decks/${deckId}/add-cards`,
+      { cards },
+      {
+        withCredentials: true,
+      }
+    );
+  }
 }

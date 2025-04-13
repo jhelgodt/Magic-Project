@@ -120,3 +120,29 @@ export const updateDeck: RequestHandler = async (req, res) => {
     res.status(400).json({ error: "Failed to update deck" });
   }
 };
+export const bulkAddCardsToDeck: RequestHandler = async (req, res) => {
+  try {
+    const { cards } = req.body;
+
+    if (!Array.isArray(cards) || cards.length === 0) {
+      res.status(400).json({ error: "No cards provided" });
+      return;
+    }
+
+    const deck = await Deck.findByIdAndUpdate(
+      req.params.id,
+      { $push: { cards: { $each: cards } } }, // ⬅️ lägg till flera kort med $each
+      { new: true }
+    );
+
+    if (!deck) {
+      res.status(404).json({ error: "Deck not found" });
+      return;
+    }
+
+    res.json(deck);
+  } catch (err) {
+    console.error("Failed to bulk add cards:", err);
+    res.status(400).json({ error: "Failed to add cards to deck" });
+  }
+};
