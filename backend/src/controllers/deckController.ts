@@ -122,27 +122,48 @@ export const updateDeck: RequestHandler = async (req, res) => {
 };
 export const bulkAddCardsToDeck: RequestHandler = async (req, res) => {
   try {
+    // ⛔ Skydda endpointen – kräver inloggning
+    if (!req.user) {
+      res.status(401).json({ error: "Not authenticated" });
+      return;
+    }
+
     const { cards } = req.body;
 
+    // 🔍 Kontrollera att cards finns och är en array
     if (!Array.isArray(cards) || cards.length === 0) {
       res.status(400).json({ error: "No cards provided" });
       return;
     }
 
-    const deck = await Deck.findByIdAndUpdate(
-      req.params.id,
-      { $push: { cards: { $each: cards } } }, // ⬅️ lägg till flera kort med $each
-      { new: true }
-    );
+    // 🚫 Begränsa antalet kort för säkerhet och prestanda
+    const MAX_CARDS = 300;
+    if (cards.length > MAX_CARDS) {
+      res.status(400).json({ error: `Too many cards. Limit is ${MAX_CARDS}` });
+      return;
+    }
 
+    const deck = await Deck.findById(req.params.id);
+
+    // ❌ Om decken inte finns
     if (!deck) {
       res.status(404).json({ error: "Deck not found" });
       return;
     }
 
+    // 🧑‍💻 Kontrollera att det är användarens deck (valfritt)
+    if (!deck.user.equals(req.user!._id as string)) {
+      res.status(403).json({ error: "Not authorized to modify this deck" });
+      return;
+    }
+
+    // ✅ Lägg till kort
+    deck.cards.push(...cards);
+    await deck.save();
+
     res.json(deck);
   } catch (err) {
     console.error("Failed to bulk add cards:", err);
-    res.status(400).json({ error: "Failed to add cards to deck" });
+    res.status(500).json({ error: "Failed to add cards to deck" });
   }
 };

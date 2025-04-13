@@ -58,45 +58,6 @@
         margin-bottom: 1rem;
       }
 
-      .deck-detail__cards-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-        gap: 1.5rem;
-      }
-
-      .card-preview {
-        padding: 1rem;
-        border: 2px solid transparent;
-        border-radius: 10px;
-        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.08);
-        cursor: pointer;
-        background-color: #fff;
-        transition: border 0.2s ease, transform 0.2s ease;
-
-        img {
-          width: 100%;
-          height: auto;
-          border-radius: 6px;
-          margin-bottom: 0.5rem;
-        }
-
-        h4 {
-          margin: 0.5rem 0;
-          font-size: 1.1rem;
-          color: $color-text-dark;
-        }
-
-        p {
-          font-size: 0.9rem;
-          color: $color-text-muted;
-        }
-
-        &.selected {
-          border-color: $color-accent;
-          transform: scale(1.02);
-        }
-      }
-
       .deck-detail__add-button {
         @include nav-link-resume;
         margin-top: 1.5rem;
@@ -110,36 +71,68 @@
       text-align: center;
       margin-bottom: 1.5rem;
     }
+  }
 
-    .deck-detail__cards-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-      gap: 1.5rem;
+  &__cards-grid {
+    display: grid;
+    gap: 1.5rem;
+
+    // Default: 3 kort per rad
+    grid-template-columns: repeat(3, 1fr);
+
+    @media (max-width: 1024px) {
+      grid-template-columns: repeat(2, 1fr);
     }
 
-    .card-preview {
-      padding: 1rem;
-      background-color: #fff;
-      border-radius: 10px;
-      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.06);
-
-      img {
-        width: 100%;
-        height: auto;
-        border-radius: 6px;
-        margin-bottom: 0.5rem;
-      }
-
-      h4 {
-        margin: 0.5rem 0;
-        font-size: 1.1rem;
-        color: $color-text-dark;
-      }
-
-      p {
-        font-size: 0.9rem;
-        color: $color-text-muted;
-      }
+    @media (max-width: 600px) {
+      grid-template-columns: 1fr;
     }
+  }
+
+  .card-preview {
+    padding: 1rem;
+    background-color: #fff;
+    border-radius: 10px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.08);
+    cursor: pointer;
+    transition: border 0.2s ease, transform 0.2s ease;
+
+    img {
+      width: 100%;
+      height: auto;
+      border-radius: 6px;
+      margin-bottom: 0.5rem;
+      display: block;
+      margin-left: auto;
+      margin-right: auto;
+      max-width: clamp(220px, 22vw, 380px);
+    }
+
+    h4 {
+      margin: 0.5rem 0;
+      font-size: 1.1rem;
+      color: $color-text-dark;
+    }
+
+    p {
+      font-size: 0.9rem;
+      color: $color-text-muted;
+    }
+
+    &.selected {
+      border: 2px solid $color-accent;
+      transform: scale(1.02);
+    }
+  }
+
+  &__textarea {
+    width: 100%;
+    max-width: 600px;
+    margin: 0 auto 1rem;
+    padding: 1rem;
+    font-size: 1rem;
+    border: 1px solid $color-border;
+    border-radius: 8px;
+    resize: vertical;
   }
 }

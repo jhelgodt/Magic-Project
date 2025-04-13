@@ -33,7 +33,7 @@ app.use(
 );
 
 // ✅ Middleware: JSON parsing
-app.use(express.json());
+app.use(express.json({ limit: "1mb" }));
 app.set("trust proxy", 1); // Trust the first proxy (needed for secure cookies)
 
 // ✅ Session config (after CORS)
