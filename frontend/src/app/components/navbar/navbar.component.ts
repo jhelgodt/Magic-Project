@@ -1,52 +1,49 @@
 import { Component, OnInit } from "@angular/core";
 import { AuthService } from "../../services/auth.service";
-import { CommonModule } from "@angular/common"; // Import CommonModule
+import { CommonModule } from "@angular/common";
+import { RouterModule } from "@angular/router"; // ✅ Lägg till detta!
 
 @Component({
   selector: "app-navbar",
-  imports: [CommonModule], // Add CommonModule to imports
+  standalone: true, // ✅ Om du använder standalone-komponenter
+  imports: [CommonModule, RouterModule], // ✅ Lägg till RouterModule här
   templateUrl: "./navbar.component.html",
   styleUrls: ["./navbar.component.scss"],
 })
 export class NavbarComponent implements OnInit {
-  isLoggedIn = false; // Tracks whether the user is logged in
-  user: any = null; // Stores user information (e.g., name, profile picture)
-  menuOpen = false; // Tracks whether the menu is open or closed
+  isLoggedIn = false;
+  user: any = null;
+  menuOpen = false;
 
   constructor(private authService: AuthService) {}
 
   ngOnInit(): void {
-    // Check if the user is authenticated when the component initializes
     this.authService.isAuthenticated().subscribe(
       (user) => {
-        this.isLoggedIn = true; // User is authenticated
-        this.user = user; // Store user information
+        this.isLoggedIn = true;
+        this.user = user;
       },
-      (error) => {
-        this.isLoggedIn = false; // User is not authenticated
-        this.user = null; // Clear user information
+      () => {
+        this.isLoggedIn = false;
+        this.user = null;
       }
     );
   }
 
-  // Redirect to the login route
   login(): void {
     this.authService.login();
   }
 
-  // Redirect to the logout route
   logout(): void {
     this.authService.logout();
-    this.isLoggedIn = false; // Reset authentication state
-    this.user = null; // Clear user information
+    this.isLoggedIn = false;
+    this.user = null;
   }
 
-  // Toggle the menu open/close state
   toggleMenu(): void {
     this.menuOpen = !this.menuOpen;
   }
 
-  // Close the menu
   closeMenu(): void {
     this.menuOpen = false;
   }
