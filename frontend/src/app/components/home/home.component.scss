@@ -1,0 +1,63 @@
+@use "../../../styles/variables" as *;
+@use "../../../styles/mixins" as *;
+
+.home {
+  @include section-padding;
+
+  display: flex;
+  justify-content: center;
+
+  &__content {
+    max-width: 900px;
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 2.5rem;
+
+    h1 {
+      font-size: 2.5rem;
+      text-align: center;
+      color: $color-primary;
+    }
+
+    h2 {
+      font-size: 1.8rem;
+      color: $color-secondary;
+      margin-top: 1rem;
+    }
+
+    p {
+      font-size: 1.1rem;
+      color: $color-text-muted;
+      line-height: 1.6;
+    }
+
+    ul {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+
+      li {
+        padding-left: 1.5rem;
+        position: relative;
+        font-size: 1.05rem;
+        color: $color-text;
+
+        &::before {
+          content: "•";
+          position: absolute;
+          left: 0;
+          color: $color-accent;
+          font-weight: bold;
+        }
+
+        strong {
+          color: $color-text-dark;
+        }
+      }
+    }
+  }
+}
