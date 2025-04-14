@@ -8,13 +8,6 @@
         checking <em>“Make this deck public”</em>. Public decks will show up
         below once created.
       </p>
-
-      <p class="deck-builder__info deck-builder__info--loading">
-        ⚠️ <strong>It may take a few seconds</strong> for decks to appear below
-        — this is normal while the server starts up. If you're logged in, you'll
-        see both your own decks and public ones. Click “View Deck” to browse or
-        edit a deck, add cards in bulk, or search for cards to include.
-      </p>
     </header>
 
     <div class="deck-builder__add-form">
@@ -48,7 +41,9 @@
 
     <section class="deck-builder__grid">
       <div *ngIf="decks.length === 0" class="deck-builder__empty">
-        No decks available yet. Start building!
+        ⏳ Just a moment... Public decks will appear here shortly once the
+        server has started. If you're logged in, your own decks will show up
+        too.
       </div>
 
       <div class="deck-card" *ngFor="let deck of decks">
